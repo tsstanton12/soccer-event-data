@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Possession Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">Training workspace</p>
+      <h1>Possession Lab</h1>
+      <p class="subtitle">Label player possession, evaluate predictions, and identify completed passes.</p>
+    </div>
+    <div class="header-actions">
+      <button id="loadDemo">Load demo</button>
+      <label class="button primary">Open video<input id="videoInput" type="file" accept="video/*" hidden></label>
+      <label class="button">Import SoccerTrack actions<input id="soccerTrackInput" type="file" accept=".json,application/json" hidden></label>
+      <label class="button">Import labels<input id="labelsInput" type="file" accept=".json,application/json" hidden></label>
+      <button id="exportJson">Export labels</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card workspace">
+      <div class="video-wrap">
+        <video id="video" controls preload="metadata"></video>
+        <div id="emptyVideo" class="empty-video">
+          <strong>Open a short clip to begin</strong>
+          <span>Start with 3-5 representative clips, roughly 20-60 seconds each.</span>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button data-seek="-1">-1s</button>
+        <button data-seek="-0.1">-0.1s</button>
+        <button id="playPause" class="primary">Play / pause</button>
+        <button data-seek="0.1">+0.1s</button>
+        <button data-seek="1">+1s</button>
+        <span id="clock">00:00.000</span>
+      </div>
+
+      <div class="label-form">
+        <div class="time-field">
+          <span>In</span>
+          <strong id="startValue">Not set</strong>
+          <button id="markStart">Mark in <kbd>I</kbd></button>
+        </div>
+        <div class="time-field">
+          <span>Out</span>
+          <strong id="endValue">Not set</strong>
+          <button id="markEnd">Mark out <kbd>O</kbd></button>
+        </div>
+        <label>State
+          <select id="state">
+            <option value="controlled">Controlled</option>
+            <option value="contested">Contested</option>
+            <option value="loose">Loose</option>
+            <option value="airborne">Airborne</option>
+            <option value="out_of_play">Out of play</option>
+            <option value="unknown">Unknown</option>
+          </select>
+        </label>
+        <label>Team
+          <select id="team">
+            <option value="">None / unknown</option>
+            <option value="home">Home</option>
+            <option value="away">Away</option>
+          </select>
+        </label>
+        <label>Player ID
+          <input id="player" placeholder="e.g. home_07">
+        </label>
+        <label>Confidence
+          <select id="confidence">
+            <option value="1">Certain</option>
+            <option value="0.75">Likely</option>
+            <option value="0.5">Unsure</option>
+          </select>
+        </label>
+        <label class="notes">Notes
+          <input id="notes" placeholder="Optional">
+        </label>
+        <button id="addSegment" class="primary add">Add segment <kbd>Enter</kbd></button>
+      </div>
+      <p id="formMessage" class="message" aria-live="polite"></p>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Standardized source</p>
+          <h2>Ball actions</h2>
+        </div>
+        <div class="header-actions">
+          <span id="actionSummary" class="pill">0 actions</span>
+          <button id="derivePossession">Derive possession</button>
+          <button id="exportActions">Export actions</button>
+        </div>
+      </div>
+      <p class="help">SoccerTrack v2 actions are normalized into a common schema. Derived possession is intentionally conservative and should be reviewed.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Half</th><th>Time</th><th>Action</th><th>Team</th><th>Player</th><th>Visibility</th><th>Source</th></tr></thead>
+          <tbody id="actionsBody"><tr><td colspan="7" class="empty-row">Import a SoccerTrack v2 BAS annotation file.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Ground truth</p>
+          <h2>Possession segments</h2>
+        </div>
+        <span id="segmentSummary" class="pill">0 segments</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Duration</th><th>State</th><th>Team</th><th>Player</th><th>Confidence</th><th>Notes</th><th></th></tr></thead>
+          <tbody id="segmentsBody"><tr><td colspan="8" class="empty-row">No labels yet.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Evaluation</p>
+            <h2>Compare predictions</h2>
+          </div>
+          <label class="button">Import predictions<input id="predictionsInput" type="file" accept=".json,application/json" hidden></label>
+        </div>
+        <p class="help">Predictions use the same segment JSON format as exported labels. Team and player accuracy are scored only during controlled possession.</p>
+        <div id="metrics" class="metrics">
+          <div><span>State accuracy</span><strong>-</strong></div>
+          <div><span>Team accuracy</span><strong>-</strong></div>
+          <div><span>Player accuracy</span><strong>-</strong></div>
+          <div><span>Evaluated time</span><strong>-</strong></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Derived events</p>
+            <h2>Completed pass candidates</h2>
+          </div>
+          <button id="exportPasses">Export passes</button>
+        </div>
+        <label class="inline-field">Maximum transition time
+          <input id="maxGap" type="number" value="2" min="0" max="10" step="0.1"> seconds
+        </label>
+        <div id="passes" class="passes"><p class="empty-row">No completed passes found.</p></div>
+      </article>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
