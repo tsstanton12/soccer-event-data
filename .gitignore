@@ -1,0 +1,47 @@
+# macOS and editor files
+.DS_Store
+.idea/
+.vscode/
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+venv*/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local datasets and generated training images
+data/raw_videos/
+data/harvested_frames/
+data/field_segmentation/images_to_annotate/
+data/field_segmentation/pilot_images_to_annotate/
+data/field_segmentation/v2_failure_batch/
+far_side_training_crops/
+future_training_images/
+gap_review_frames/
+more_training_frames/
+review_training_frames/
+training_images/
+soccer-ball-detector*.yolov8/
+
+# Generated results and training runs
+outputs/
+runs/
+
+# Videos, model weights, and exported archives
+videos/
+models/
+*.pt
+*.pth
+*.onnx
+*.zip
