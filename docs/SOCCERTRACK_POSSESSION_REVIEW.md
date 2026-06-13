@@ -40,13 +40,16 @@ produce 15 conservative possession segments.
 
 1. Import the match BAS JSON with **Import SoccerTrack actions**.
 2. Select **First half**.
-3. Open the matching first-half panorama video.
+3. Click **Open prepared review** to stream the matching first-half panorama.
 4. Click **Derive possession**.
 5. Review an initial representative 20-60 second section.
 6. Correct player, team, timing, and possession state.
 7. Export the half-specific labels.
 
 Repeat with the second half after the first-half workflow is reliable.
+
+The source review MP4 uses an older MPEG-4 codec that Chromium does not play
+reliably. **Open prepared review** loads the locally transcoded H.264 copy.
 
 Match `117092` was screened and rejected for this first review because its BAS
 file contains corrupted first-half timestamps extending to 135 minutes.

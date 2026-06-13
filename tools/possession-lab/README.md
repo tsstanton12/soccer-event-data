@@ -14,6 +14,8 @@ python3 -m http.server 8000
 Then open `http://localhost:8000`.
 
 Use **Load demo** to explore a completed example without opening a video.
+Use **Open prepared review** to stream the browser-compatible SoccerTrack
+`117093` first-half panorama for the prepared 60-second review batch.
 
 ## SoccerTrack v2 workflow
 

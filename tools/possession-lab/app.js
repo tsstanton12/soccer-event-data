@@ -9,6 +9,12 @@ let clipName = "";
 let markIn = null;
 let markOut = null;
 
+const PREPARED_REVIEW = {
+  clip: "117093_panorama_1st_half.mp4",
+  half: 1,
+  video: "review-data/117093_panorama_1st_half_review_0000_0060_h264.mp4"
+};
+
 const $ = (selector) => document.querySelector(selector);
 const value = (selector) => $(selector).value;
 const activeHalf = () => Number(value("#reviewHalf"));
@@ -274,6 +280,17 @@ $("#videoInput").addEventListener("change", (event) => {
   video.src = URL.createObjectURL(file);
   video.style.display = "block";
   emptyVideo.style.display = "none";
+});
+$("#loadPreparedReview").addEventListener("click", () => {
+  clipName = PREPARED_REVIEW.clip;
+  $("#reviewHalf").value = String(PREPARED_REVIEW.half);
+  video.src = PREPARED_REVIEW.video;
+  video.style.display = "block";
+  emptyVideo.style.display = "none";
+  resetMarks();
+  renderAll();
+  message.textContent = "Prepared first-half review video loaded. Import the prepared actions file, then review the first 60 seconds.";
+  message.style.color = "var(--green)";
 });
 video.addEventListener("timeupdate", () => clock.textContent = formatTime(video.currentTime));
 $("#playPause").addEventListener("click", () => video.paused ? video.play() : video.pause());

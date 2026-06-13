@@ -43,6 +43,7 @@ runs/
 # Videos, model weights, and exported archives
 videos/
 models/
+tools/possession-lab/review-data/
 *.pt
 *.pth
 *.onnx
