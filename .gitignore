@@ -23,6 +23,8 @@ venv*/
 # Local datasets and generated training images
 data/raw_videos/
 data/harvested_frames/
+data/soccertrack/*
+!data/soccertrack/README.md
 data/field_segmentation/images_to_annotate/
 data/field_segmentation/pilot_images_to_annotate/
 data/field_segmentation/v2_failure_batch/

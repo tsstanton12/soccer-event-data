@@ -11,6 +11,7 @@ let markOut = null;
 
 const $ = (selector) => document.querySelector(selector);
 const value = (selector) => $(selector).value;
+const activeHalf = () => Number(value("#reviewHalf"));
 const formatTime = (seconds) => {
   const safe = Math.max(0, Number(seconds) || 0);
   const mins = Math.floor(safe / 60).toString().padStart(2, "0");
@@ -27,6 +28,7 @@ const download = (name, data, type = "application/json") => {
 };
 const normalizeSegments = (input) => {
   const raw = Array.isArray(input) ? input : input.segments;
+  const defaultHalf = Array.isArray(input) ? 1 : Number(input.half || 1);
   if (!Array.isArray(raw)) throw new Error("File must contain a segments array.");
   return raw.map((s, index) => ({
     id: s.id || crypto.randomUUID(),
@@ -37,6 +39,8 @@ const normalizeSegments = (input) => {
     player: String(s.player || ""),
     confidence: Number(s.confidence ?? 1),
     notes: String(s.notes || ""),
+    half: Number(s.half || defaultHalf),
+    source_action_id: String(s.source_action_id || ""),
     sourceIndex: index
   })).filter((s) => Number.isFinite(s.start) && Number.isFinite(s.end) && s.end > s.start)
     .sort((a, b) => a.start - b.start);
@@ -44,8 +48,10 @@ const normalizeSegments = (input) => {
 const labelPayload = () => ({
   schema_version: "1.0",
   clip: clipName,
+  half: activeHalf(),
   created_at: new Date().toISOString(),
-  segments: segments.map(({ sourceIndex, ...segment }) => segment)
+  segments: segments.filter((segment) => segment.half === activeHalf())
+    .map(({ sourceIndex, ...segment }) => segment)
 });
 const actionPayload = () => ({
   schema_version: "1.0",
@@ -56,26 +62,33 @@ const actionPayload = () => ({
 });
 
 const SOCCERTRACK_LABELS = new Set([
-  "Pass", "Drive", "Header", "High Pass", "Out", "Cross", "Throw In", "Shot",
-  "Ball Player Block", "Player Successful Tackle", "Free Kick", "Goal"
+  "PASS", "DRIVE", "HEADER", "HIGH PASS", "OUT", "CROSS", "THROW IN", "SHOT",
+  "BALL PLAYER BLOCK", "PLAYER SUCCESSFUL TACKLE", "FREE KICK", "GOAL"
 ]);
 
 function normalizeSoccerTrack(input) {
-  if (!Array.isArray(input.annotations)) throw new Error("SoccerTrack file must contain an annotations array.");
-  const match = String(input.UrlLocal || "soccertrack-match");
+  const sourceActions = input.actions || input.annotations;
+  if (!Array.isArray(sourceActions)) throw new Error("SoccerTrack file must contain an actions or annotations array.");
+  const match = String(input.match_id || input.UrlLocal || "soccertrack-match");
+  const fps = Number(input.fps || 25);
   clipName = match;
-  return input.annotations.map((event, index) => {
-    if (!SOCCERTRACK_LABELS.has(event.label)) throw new Error(`Unknown SoccerTrack action: ${event.label}`);
+  return sourceActions.map((event, index) => {
+    const label = String(event.label || "").toUpperCase();
+    if (!SOCCERTRACK_LABELS.has(label)) throw new Error(`Unknown SoccerTrack action: ${event.label}`);
     const half = Number(String(event.gameTime || "").split(" - ")[0]);
-    const time = Number.parseInt(event.position, 10) / 1000;
-    if (![1, 2].includes(half) || !Number.isFinite(time)) throw new Error(`Invalid time at annotation ${index + 1}.`);
+    const sourceTime = Number.parseInt(event.position, 10) / 1000;
+    if (![1, 2].includes(half) || !Number.isFinite(sourceTime)) throw new Error(`Invalid time at annotation ${index + 1}.`);
+    // Current Drive files use a global match timeline while older documented
+    // files use half-relative positions. Normalize both to the half video.
+    const time = half === 2 && sourceTime >= 45 * 60 ? sourceTime - 45 * 60 : sourceTime;
     return {
       id: crypto.randomUUID(),
       half,
       time,
-      frame: Math.round(time * 25),
-      type: event.label.toLowerCase().replaceAll(" ", "_"),
-      original_label: event.label,
+      frame: Math.round(time * fps),
+      type: label.toLowerCase().replaceAll(" ", "_"),
+      original_label: label,
+      source_time: sourceTime,
       team: event.team || "",
       player: event.player_id === null || event.player_id === undefined ? "" : String(event.player_id),
       visibility: event.visibility || "unknown",
@@ -110,7 +123,8 @@ function addSegment() {
   }
   segments.push({
     id: crypto.randomUUID(), start: markIn, end: markOut, state, team, player,
-    confidence: Number(value("#confidence")), notes: value("#notes").trim()
+    confidence: Number(value("#confidence")), notes: value("#notes").trim(),
+    half: activeHalf(), source_action_id: ""
   });
   segments.sort((a, b) => a.start - b.start);
   resetMarks();
@@ -120,13 +134,14 @@ function addSegment() {
 }
 
 function renderSegments() {
+  const halfSegments = segments.filter((segment) => segment.half === activeHalf());
   const body = $("#segmentsBody");
-  $("#segmentSummary").textContent = `${segments.length} segment${segments.length === 1 ? "" : "s"}`;
-  if (!segments.length) {
+  $("#segmentSummary").textContent = `${halfSegments.length} segment${halfSegments.length === 1 ? "" : "s"} · half ${activeHalf()}`;
+  if (!halfSegments.length) {
     body.innerHTML = '<tr><td colspan="8" class="empty-row">No labels yet.</td></tr>';
     return;
   }
-  body.innerHTML = segments.map((s) => `<tr>
+  body.innerHTML = halfSegments.map((s) => `<tr>
     <td data-jump="${s.start}">${formatTime(s.start)} - ${formatTime(s.end)}</td>
     <td>${(s.end - s.start).toFixed(2)}s</td><td>${s.state}</td><td>${s.team || "-"}</td>
     <td>${s.player || "-"}</td><td>${Math.round(s.confidence * 100)}%</td><td>${s.notes || "-"}</td>
@@ -135,13 +150,14 @@ function renderSegments() {
 }
 
 function renderActions() {
-  $("#actionSummary").textContent = `${actions.length} action${actions.length === 1 ? "" : "s"}`;
+  const halfActions = actions.filter((action) => action.half === activeHalf());
+  $("#actionSummary").textContent = `${halfActions.length} action${halfActions.length === 1 ? "" : "s"} · half ${activeHalf()}`;
   const body = $("#actionsBody");
-  if (!actions.length) {
+  if (!halfActions.length) {
     body.innerHTML = '<tr><td colspan="7" class="empty-row">Import a SoccerTrack v2 BAS annotation file.</td></tr>';
     return;
   }
-  body.innerHTML = actions.map((a) => `<tr>
+  body.innerHTML = halfActions.map((a) => `<tr>
     <td>${a.half}</td><td>${formatTime(a.time)}</td><td>${a.original_label}</td>
     <td>${a.team || "-"}</td><td>${a.player || "-"}</td><td>${a.visibility}</td><td>SoccerTrack v2</td>
   </tr>`).join("");
@@ -153,10 +169,11 @@ function derivePossessionFromActions() {
     "free_kick", "player_successful_tackle"
   ]);
   const derived = [];
-  for (let i = 0; i < actions.length; i++) {
-    const current = actions[i];
+  const halfActions = actions.filter((action) => action.half === activeHalf());
+  for (let i = 0; i < halfActions.length; i++) {
+    const current = halfActions[i];
     if (!controlActions.has(current.type) || !current.team || !current.player) continue;
-    const next = actions.slice(i + 1).find((candidate) => candidate.half === current.half);
+    const next = halfActions[i + 1];
     let end = next ? next.time : current.time + 2;
     end = Math.min(end, current.time + 8);
     if (end <= current.time) continue;
@@ -173,15 +190,19 @@ function derivePossessionFromActions() {
       source_action_id: current.id
     });
   }
-  segments = derived.sort((a, b) => (a.half || 1) - (b.half || 1) || a.start - b.start);
-  message.textContent = `Derived ${segments.length} conservative possession segments from ${actions.length} actions. Review before using as ground truth.`;
+  segments = segments.filter((segment) => segment.half !== activeHalf())
+    .concat(derived)
+    .sort((a, b) => a.half - b.half || a.start - b.start);
+  message.textContent = `Derived ${derived.length} conservative possession segments from ${halfActions.length} half ${activeHalf()} actions. Review before using as ground truth.`;
   message.style.color = "var(--green)";
   renderAll();
 }
 
 function completedPasses() {
   const maxGap = Number(value("#maxGap"));
-  const controlled = segments.filter((s) => s.state === "controlled" && s.team && s.player);
+  const controlled = segments.filter((s) =>
+    s.half === activeHalf() && s.state === "controlled" && s.team && s.player
+  );
   const passes = [];
   for (let i = 0; i < controlled.length - 1; i++) {
     const from = controlled[i];
@@ -211,17 +232,19 @@ function segmentAt(list, time) {
 }
 
 function renderMetrics() {
+  const halfSegments = segments.filter((segment) => segment.half === activeHalf());
+  const halfPredictions = predictions.filter((prediction) => prediction.half === activeHalf());
   const fields = ["state", "team", "player"];
   const values = ["-", "-", "-", "-"];
-  if (segments.length && predictions.length) {
-    const boundaries = [...new Set([...segments, ...predictions].flatMap((s) => [s.start, s.end]))].sort((a, b) => a - b);
+  if (halfSegments.length && halfPredictions.length) {
+    const boundaries = [...new Set([...halfSegments, ...halfPredictions].flatMap((s) => [s.start, s.end]))].sort((a, b) => a - b);
     const scores = Object.fromEntries(fields.map((f) => [f, 0]));
     const totals = { state: 0, team: 0, player: 0 };
     for (let i = 0; i < boundaries.length - 1; i++) {
       const start = boundaries[i], end = boundaries[i + 1], duration = end - start;
-      const truth = segmentAt(segments, (start + end) / 2);
+      const truth = segmentAt(halfSegments, (start + end) / 2);
       if (!truth) continue;
-      const predicted = segmentAt(predictions, (start + end) / 2);
+      const predicted = segmentAt(halfPredictions, (start + end) / 2);
       totals.state += duration;
       if (predicted && predicted.state === truth.state) scores.state += duration;
       if (truth.state === "controlled") {
@@ -261,6 +284,12 @@ $("#markStart").addEventListener("click", () => setMark("in"));
 $("#markEnd").addEventListener("click", () => setMark("out"));
 $("#addSegment").addEventListener("click", addSegment);
 $("#maxGap").addEventListener("input", renderPasses);
+$("#reviewHalf").addEventListener("change", () => {
+  resetMarks();
+  renderAll();
+  message.textContent = `Reviewing half ${activeHalf()}. Open the matching panorama video.`;
+  message.style.color = "var(--green)";
+});
 $("#segmentsBody").addEventListener("click", (event) => {
   const jump = event.target.closest("[data-jump]");
   const remove = event.target.closest("[data-delete]");
@@ -270,9 +299,9 @@ $("#segmentsBody").addEventListener("click", (event) => {
     renderAll();
   }
 });
-$("#exportJson").addEventListener("click", () => download(`${clipName || "clip"}.possession-labels.json`, JSON.stringify(labelPayload(), null, 2)));
-$("#exportPasses").addEventListener("click", () => download(`${clipName || "clip"}.completed-passes.json`, JSON.stringify({
-  schema_version: "1.0", clip: clipName, events: completedPasses()
+$("#exportJson").addEventListener("click", () => download(`${clipName || "clip"}.half-${activeHalf()}.possession-labels.json`, JSON.stringify(labelPayload(), null, 2)));
+$("#exportPasses").addEventListener("click", () => download(`${clipName || "clip"}.half-${activeHalf()}.completed-passes.json`, JSON.stringify({
+  schema_version: "1.0", clip: clipName, half: activeHalf(), events: completedPasses()
 }, null, 2)));
 $("#exportActions").addEventListener("click", () => download(`${clipName || "match"}.standard-actions.json`, JSON.stringify(actionPayload(), null, 2)));
 $("#derivePossession").addEventListener("click", derivePossessionFromActions);

@@ -108,7 +108,8 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Use Possession Lab to review SoccerTrack-derived segments for one match.
+1. Review the prepared 60-second, first-half SoccerTrack `117093` batch in
+   Possession Lab. See `docs/SOCCERTRACK_POSSESSION_REVIEW.md`.
 2. Define a stable common event/possession schema shared by the video pipeline,
    Possession Lab, and `soccer-xT-project`.
 3. Add team classification and persistent player identity to the broadcast

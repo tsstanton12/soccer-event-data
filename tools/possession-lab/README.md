@@ -19,19 +19,22 @@ Use **Load demo** to explore a completed example without opening a video.
 
 1. Download a SoccerTrack v2 BAS annotation JSON file.
 2. Use **Import SoccerTrack actions**.
-3. Inspect the standardized action timeline.
-4. Use **Derive possession** to create conservative, review-required possession
+3. Select the half and open its matching panorama video.
+4. Inspect the standardized action timeline.
+5. Use **Derive possession** to create conservative, review-required possession
    segments from identifiable player actions.
-5. Export the standardized actions or reviewed possession labels.
+6. Export the standardized actions or reviewed possession labels.
 
 The current derivation treats passes, drives, headers, high passes, crosses,
 shots, throw-ins, free kicks, and successful tackles as evidence that the
 identified actor controls or has just controlled the ball. It does not infer
 control from blocks, outs, or goals.
 
-SoccerTrack v2 BAS timestamps are half-relative. The imported common action
-schema preserves `half`, seconds within the half, the 25 fps frame index, team,
-player, visibility, original label, and source.
+Possession Lab normalizes both documented half-relative BAS timestamps and
+current Drive files that use a global match timeline. The common action schema
+preserves `half`, seconds within the selected half video, source time, the
+25 fps frame index, team, player, visibility, original label, and source.
+Possession Lab reviews and exports one selected half at a time.
 
 SoccerTrack v2 data is distributed under CC BY 4.0. Preserve attribution when
 using or redistributing derived data:
