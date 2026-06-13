@@ -38,7 +38,18 @@ def mask_iou(first, second):
     return intersection / union if union else 0.0
 
 
-def evaluate_video(video_path, model, field_mask, output_dir, sample_every, max_samples, conf, imgsz):
+def evaluate_video(
+    video_path,
+    model,
+    field_mask,
+    output_dir,
+    sample_every,
+    max_samples,
+    conf,
+    imgsz,
+    segmentation_inset_px,
+    tolerant_margin_px,
+):
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         print(f"Skipping unreadable video: {video_path}")
@@ -63,7 +74,7 @@ def evaluate_video(video_path, model, field_mask, output_dir, sample_every, max_
             max_points=6,
             conf=conf,
             imgsz=imgsz,
-            inset_px=3,
+            inset_px=segmentation_inset_px,
         )
         h, w = frame.shape[:2]
         area_fraction = area / (h * w)
@@ -73,8 +84,18 @@ def evaluate_video(video_path, model, field_mask, output_dir, sample_every, max_
         if poly is not None:
             previous_mask = mask
 
+        tolerant_poly = (
+            field_mask.build_tolerant_polygon(
+                poly,
+                mask.shape,
+                margin_px=tolerant_margin_px,
+                max_points=6,
+            )
+            if poly is not None
+            else None
+        )
         debug_path = video_dir / f"frame_{frame_number:07d}.jpg"
-        field_mask.save_debug(frame, poly, mask, debug_path)
+        field_mask.save_debug(frame, poly, tolerant_poly, mask, debug_path)
         rows.append({
             "video": str(video_path),
             "frame": frame_number,
@@ -84,6 +105,14 @@ def evaluate_video(video_path, model, field_mask, output_dir, sample_every, max_
             "area_fraction": round(area_fraction, 4),
             "num_points": len(poly) if poly is not None else 0,
             "temporal_iou": round(temporal_iou, 4) if temporal_iou != "" else "",
+            "segmentation_inset_px": segmentation_inset_px,
+            "tolerant_margin_px": tolerant_margin_px,
+            "strict_field_polygon": field_mask.polygon_string(poly) if poly is not None else "",
+            "tolerant_field_polygon": (
+                field_mask.polygon_string(tolerant_poly)
+                if tolerant_poly is not None
+                else ""
+            ),
             "debug_image": str(debug_path),
             "review": "",
         })
@@ -102,6 +131,8 @@ def main():
     parser.add_argument("--max_samples_per_video", type=int, default=30)
     parser.add_argument("--conf", type=float, default=0.25)
     parser.add_argument("--imgsz", type=int, default=960)
+    parser.add_argument("--segmentation_inset_px", type=int, default=0)
+    parser.add_argument("--tolerant_margin_px", type=int, default=15)
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -122,6 +153,8 @@ def main():
             args.max_samples_per_video,
             args.conf,
             args.imgsz,
+            args.segmentation_inset_px,
+            args.tolerant_margin_px,
         ))
 
     report_path = output_dir / "evaluation_manifest.csv"

@@ -56,6 +56,11 @@ This behavior is implemented:
 - `src/41_ball_player_association_v2.py` prefers strict players when one is
   within association range, otherwise permits tolerant players.
 
+The strict/tolerant behavior was evaluated on the 48-frame V2 review set. The
+current `0px` segmentation inset and `15px` tolerant margin retained 5,120
+tolerant-only Army detections while preserving the desired exclusion of
+sideline figures. See `docs/STRICT_TOLERANT_EVALUATION.md`.
+
 ## Possession Lab
 
 `tools/possession-lab/` is a standalone browser tool for:
@@ -103,13 +108,10 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Run and evaluate the implemented strict/tolerant polygon pipeline on edge
-   cases, especially goalkeepers.
-2. Use Possession Lab to review SoccerTrack-derived segments for one match.
-3. Define a stable common event/possession schema shared by the video pipeline,
+1. Use Possession Lab to review SoccerTrack-derived segments for one match.
+2. Define a stable common event/possession schema shared by the video pipeline,
    Possession Lab, and `soccer-xT-project`.
-4. Add team classification and persistent player identity to the broadcast
+3. Add team classification and persistent player identity to the broadcast
    video pipeline.
-5. Train/evaluate automatic possession assignment before expanding event
+4. Train/evaluate automatic possession assignment before expanding event
    inference beyond completed-pass candidates.
-
