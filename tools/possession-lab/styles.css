@@ -101,6 +101,8 @@ th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: n
 td:first-child { color: var(--green); font-variant-numeric: tabular-nums; font-weight: 800; cursor: pointer; }
 .empty-row { color: var(--muted); text-align: center; padding: 28px; }
 .delete { color: var(--danger); padding: 5px 8px; min-height: auto; }
+.jump { color: var(--green); padding: 5px 8px; min-height: auto; white-space: nowrap; }
+td small { color: var(--muted); font-weight: 600; }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
 .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 18px; }

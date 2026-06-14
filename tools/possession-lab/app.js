@@ -13,6 +13,7 @@ let videoObjectUrl = "";
 const PREPARED_REVIEW = {
   clip: "117093_panorama_1st_half.mp4",
   half: 1,
+  actions: "review-data/117093_1st_half_review_0000_0060_actions.json",
   video: "review-data/117093_panorama_1st_half_review_0000_0060_h264.mp4"
 };
 
@@ -156,7 +157,7 @@ function renderSegments() {
     return;
   }
   body.innerHTML = halfSegments.map((s) => `<tr>
-    <td data-jump="${s.start}">${formatTime(s.start)} - ${formatTime(s.end)}</td>
+    <td><button class="jump" data-jump="${s.start}">Jump to ${formatTime(s.start)}</button><br><small>ends ${formatTime(s.end)}</small></td>
     <td>${(s.end - s.start).toFixed(2)}s</td><td>${s.state}</td><td>${s.team || "-"}</td>
     <td>${s.player || "-"}</td><td>${Math.round(s.confidence * 100)}%</td><td>${s.notes || "-"}</td>
     <td><button class="delete" data-delete="${s.id}">Delete</button></td>
@@ -293,12 +294,17 @@ $("#loadPreparedReview").addEventListener("click", async () => {
     $("#reviewHalf").value = String(PREPARED_REVIEW.half);
     message.textContent = "Loading prepared review video...";
     message.style.color = "var(--green)";
-    const response = await fetch(PREPARED_REVIEW.video);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    setVideoSource(await response.blob());
+    const [videoResponse, actionsResponse] = await Promise.all([
+      fetch(PREPARED_REVIEW.video),
+      fetch(PREPARED_REVIEW.actions)
+    ]);
+    if (!videoResponse.ok) throw new Error(`Video HTTP ${videoResponse.status}`);
+    if (!actionsResponse.ok) throw new Error(`Actions HTTP ${actionsResponse.status}`);
+    setVideoSource(await videoResponse.blob());
+    actions = normalizeSoccerTrack(await actionsResponse.json());
     resetMarks();
-    renderAll();
-    message.textContent = "Prepared first-half review video loaded. Import the prepared actions file, then review the first 60 seconds.";
+    derivePossessionFromActions();
+    message.textContent = "Prepared review loaded with 15 derived segments. Use the green Jump buttons under Ground Truth.";
   } catch (error) {
     message.textContent = `Could not load prepared review video: ${error.message}`;
     message.style.color = "var(--danger)";
@@ -322,7 +328,15 @@ $("#reviewHalf").addEventListener("change", () => {
 $("#segmentsBody").addEventListener("click", (event) => {
   const jump = event.target.closest("[data-jump]");
   const remove = event.target.closest("[data-delete]");
-  if (jump) video.currentTime = Number(jump.dataset.jump);
+  if (jump) {
+    const targetTime = Number(jump.dataset.jump);
+    video.pause();
+    video.currentTime = targetTime;
+    clock.textContent = formatTime(targetTime);
+    message.textContent = `Jumped to ${formatTime(targetTime)}.`;
+    message.style.color = "var(--green)";
+    document.querySelector(".workspace").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   if (remove) {
     segments = segments.filter((s) => s.id !== remove.dataset.delete);
     renderAll();

@@ -15,7 +15,7 @@ Then open `http://localhost:8000`.
 
 Use **Load demo** to explore a completed example without opening a video.
 Use **Open prepared review** to stream the browser-compatible SoccerTrack
-`117093` first-half panorama for the prepared 60-second review batch.
+`117093` first-half panorama and load its 15 derived possession segments.
 
 ## SoccerTrack v2 workflow
 
