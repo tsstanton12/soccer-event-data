@@ -8,6 +8,7 @@ let actions = [];
 let clipName = "";
 let markIn = null;
 let markOut = null;
+let videoObjectUrl = "";
 
 const PREPARED_REVIEW = {
   clip: "117093_panorama_1st_half.mp4",
@@ -18,6 +19,13 @@ const PREPARED_REVIEW = {
 const $ = (selector) => document.querySelector(selector);
 const value = (selector) => $(selector).value;
 const activeHalf = () => Number(value("#reviewHalf"));
+const setVideoSource = (source) => {
+  if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+  videoObjectUrl = source instanceof Blob ? URL.createObjectURL(source) : "";
+  video.src = videoObjectUrl || source;
+  video.style.display = "block";
+  emptyVideo.style.display = "none";
+};
 const formatTime = (seconds) => {
   const safe = Math.max(0, Number(seconds) || 0);
   const mins = Math.floor(safe / 60).toString().padStart(2, "0");
@@ -277,20 +285,24 @@ $("#videoInput").addEventListener("change", (event) => {
   const file = event.target.files[0];
   if (!file) return;
   clipName = file.name;
-  video.src = URL.createObjectURL(file);
-  video.style.display = "block";
-  emptyVideo.style.display = "none";
+  setVideoSource(file);
 });
-$("#loadPreparedReview").addEventListener("click", () => {
-  clipName = PREPARED_REVIEW.clip;
-  $("#reviewHalf").value = String(PREPARED_REVIEW.half);
-  video.src = PREPARED_REVIEW.video;
-  video.style.display = "block";
-  emptyVideo.style.display = "none";
-  resetMarks();
-  renderAll();
-  message.textContent = "Prepared first-half review video loaded. Import the prepared actions file, then review the first 60 seconds.";
-  message.style.color = "var(--green)";
+$("#loadPreparedReview").addEventListener("click", async () => {
+  try {
+    clipName = PREPARED_REVIEW.clip;
+    $("#reviewHalf").value = String(PREPARED_REVIEW.half);
+    message.textContent = "Loading prepared review video...";
+    message.style.color = "var(--green)";
+    const response = await fetch(PREPARED_REVIEW.video);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    setVideoSource(await response.blob());
+    resetMarks();
+    renderAll();
+    message.textContent = "Prepared first-half review video loaded. Import the prepared actions file, then review the first 60 seconds.";
+  } catch (error) {
+    message.textContent = `Could not load prepared review video: ${error.message}`;
+    message.style.color = "var(--danger)";
+  }
 });
 video.addEventListener("timeupdate", () => clock.textContent = formatTime(video.currentTime));
 $("#playPause").addEventListener("click", () => video.paused ? video.play() : video.pause());
