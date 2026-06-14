@@ -26,6 +26,8 @@ The numbered scripts in `src/` represent the working pipeline:
 - Scripts 39-43: ball-player association and on-field player filtering.
 - Scripts 44-50: manual/automatic playable-field masks, segmentation training,
   evaluation, and failure-batch review.
+- Scripts 51-52: reviewed-possession event derivation and possession-chain
+  smoothing.
 
 ## Playable-Field Decisions
 
@@ -108,8 +110,8 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Review completed-pass candidates from the accepted `117093` first-half
-   possession batch.
+1. Evaluate `src/52_build_possession_chains.py` overlays against the known
+   pass-in-flight false ownership cases.
 2. Add team classification and persistent player identity to the broadcast
    video pipeline.
 3. Train/evaluate automatic possession assignment before expanding event
