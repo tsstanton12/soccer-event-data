@@ -86,6 +86,17 @@
         <button id="addSegment" class="primary add">Add segment <kbd>Enter</kbd></button>
       </div>
       <p id="formMessage" class="message" aria-live="polite"></p>
+      <div id="exportPanel" class="export-panel" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Export fallback</p>
+            <h2>Reviewed labels JSON</h2>
+          </div>
+          <button id="copyLabels">Copy labels</button>
+        </div>
+        <p class="help">The in-app browser may block file downloads. Copy this JSON if the download does not appear.</p>
+        <textarea id="labelsJson" readonly></textarea>
+      </div>
     </section>
 
     <section class="card">

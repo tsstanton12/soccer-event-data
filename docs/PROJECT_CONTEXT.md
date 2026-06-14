@@ -108,11 +108,9 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Review the prepared 60-second, first-half SoccerTrack `117093` batch in
-   Possession Lab. See `docs/SOCCERTRACK_POSSESSION_REVIEW.md`.
-2. Define a stable common event/possession schema shared by the video pipeline,
-   Possession Lab, and `soccer-xT-project`.
-3. Add team classification and persistent player identity to the broadcast
+1. Review completed-pass candidates from the accepted `117093` first-half
+   possession batch.
+2. Add team classification and persistent player identity to the broadcast
    video pipeline.
-4. Train/evaluate automatic possession assignment before expanding event
+3. Train/evaluate automatic possession assignment before expanding event
    inference beyond completed-pass candidates.

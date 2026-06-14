@@ -68,6 +68,7 @@ const labelPayload = () => ({
   segments: segments.filter((segment) => segment.half === activeHalf())
     .map(({ sourceIndex, ...segment }) => segment)
 });
+const labelJson = () => JSON.stringify(labelPayload(), null, 2);
 const actionPayload = () => ({
   schema_version: "1.0",
   match: clipName,
@@ -342,7 +343,30 @@ $("#segmentsBody").addEventListener("click", (event) => {
     renderAll();
   }
 });
-$("#exportJson").addEventListener("click", () => download(`${clipName || "clip"}.half-${activeHalf()}.possession-labels.json`, JSON.stringify(labelPayload(), null, 2)));
+function showLabelsExport() {
+  $("#labelsJson").value = labelJson();
+  $("#exportPanel").hidden = false;
+  message.textContent = "Labels are ready below. If no file downloaded, use Copy labels.";
+  message.style.color = "var(--green)";
+}
+
+$("#exportJson").addEventListener("click", () => {
+  showLabelsExport();
+  download(`${clipName || "clip"}.half-${activeHalf()}.possession-labels.json`, labelJson());
+});
+$("#copyLabels").addEventListener("click", async () => {
+  const text = labelJson();
+  $("#labelsJson").value = text;
+  $("#labelsJson").select();
+  try {
+    await navigator.clipboard.writeText(text);
+    message.textContent = "Labels copied to clipboard.";
+  } catch {
+    document.execCommand("copy");
+    message.textContent = "Labels selected. Press Cmd+C if they were not copied automatically.";
+  }
+  message.style.color = "var(--green)";
+});
 $("#exportPasses").addEventListener("click", () => download(`${clipName || "clip"}.half-${activeHalf()}.completed-passes.json`, JSON.stringify({
   schema_version: "1.0", clip: clipName, half: activeHalf(), events: completedPasses()
 }, null, 2)));

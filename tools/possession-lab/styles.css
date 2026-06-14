@@ -91,6 +91,8 @@ select, input { min-height: 38px; padding: 7px 9px; width: 100%; }
 .add { align-self: end; grid-column: span 2; }
 kbd { margin-left: 6px; color: inherit; opacity: .65; font: inherit; font-size: .7rem; }
 .message { min-height: 20px; padding: 8px 12px 0; color: var(--danger); font-size: .82rem; }
+.export-panel { margin: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--wash); }
+.export-panel textarea { min-height: 220px; width: 100%; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .pill { padding: 5px 9px; border-radius: 999px; background: var(--lime); font-size: .75rem; font-weight: 800; }

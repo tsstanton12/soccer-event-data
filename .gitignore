@@ -25,6 +25,12 @@ data/raw_videos/
 data/harvested_frames/
 data/soccertrack/*
 !data/soccertrack/README.md
+!data/soccertrack/*/
+data/soccertrack/*/*
+!data/soccertrack/*/reviewed/
+!data/soccertrack/*/reviewed/*.json
+!data/soccertrack/*/derived/
+!data/soccertrack/*/derived/*.json
 data/field_segmentation/images_to_annotate/
 data/field_segmentation/pilot_images_to_annotate/
 data/field_segmentation/v2_failure_batch/
