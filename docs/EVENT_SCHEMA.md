@@ -112,5 +112,32 @@ Use `--allow-unknown-team` only to emit provisional
 candidates until team classification confirms the two possessions belong to the
 same team.
 
+`src/67_classify_team_from_jersey_color.py` adds the first automatic team
+classification layer for broadcast clips. It samples player crops from
+controlled possession segments, clusters jersey colors into two provisional
+teams, votes those labels onto possession segments, and writes a possession
+label JSON that can be passed directly to event derivation.
+
+Example:
+
+```bash
+.venv/bin/python src/67_classify_team_from_jersey_color.py \
+  --video videos/army_short_clip.mp4 \
+  --players outputs/army/army_short_clip_player_detections.csv \
+  --possession-frames outputs/game_state_review/army_from_event_impact/army_event_impact_candidate_with_game_state_frames.csv \
+  --possession-segments outputs/event_impact_review/army_first60_tuned/army_event_impact_candidate_start_stability_segments.csv \
+  --output-players outputs/team_classification/army_from_event_impact/army_player_team_classification.csv \
+  --output-frames outputs/team_classification/army_from_event_impact/army_possession_frames_with_team.csv \
+  --output-segments outputs/team_classification/army_from_event_impact/army_possession_segments_with_team.csv \
+  --output-labels-json outputs/team_classification/army_from_event_impact/army_auto_possession_labels_with_team.json \
+  --match-id army_short_clip \
+  --clip army_short_clip.mp4
+```
+
+The resulting team labels are provisional: `team_1` and `team_2` mean jersey
+color clusters, not known school/team names. Current player IDs are still
+frame-local detector IDs, so pass candidates from auto possession remain
+review-required until persistent player identity is added.
+
 This still produces candidates. Later versions should distinguish true passes
 from deflections, touches, carries, set-piece restarts, and tracking artifacts.

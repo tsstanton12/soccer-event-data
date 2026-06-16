@@ -26,9 +26,10 @@ The numbered scripts in `src/` represent the working pipeline:
 - Scripts 39-43: ball-player association and on-field player filtering.
 - Scripts 44-50: manual/automatic playable-field masks, segmentation training,
   evaluation, and failure-batch review.
-- Scripts 51-66: reviewed-possession event derivation, possession-chain
+- Scripts 51-67: reviewed-possession event derivation, possession-chain
   smoothing, event-impact review, game-state review, reviewed non-live window
-  application, and auto-segment conversion into event-derivation inputs.
+  application, auto-segment conversion into event-derivation inputs, and
+  provisional jersey-color team classification.
 
 ## Playable-Field Decisions
 
@@ -111,9 +112,9 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Add team classification and persistent player identity to the broadcast
-   video pipeline so auto possession transitions can become same-team pass
-   candidates.
+1. Review/evaluate jersey-color team labels across more clips, then add
+   persistent player identity so auto possession transitions can become
+   stronger pass candidates instead of frame-local transitions.
 2. Inspect SoccerNet Ball Action Spotting access and baselines using
    `docs/OPEN_DATA_AUGMENTATION.md`.
 3. Train/evaluate automatic possession assignment before expanding event
