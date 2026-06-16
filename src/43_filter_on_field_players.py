@@ -89,16 +89,22 @@ def main():
 
     if args.field_masks_csv:
         masks = pd.read_csv(args.field_masks_csv)
-        required_mask_cols = [
-            "frame",
-            "strict_field_polygon",
-            "tolerant_field_polygon",
-        ]
+        required_mask_cols = ["frame"]
         missing = [c for c in required_mask_cols if c not in masks.columns]
         if missing:
             raise ValueError(f"Missing columns in field masks CSV: {missing}")
 
-        masks = masks.dropna(subset=required_mask_cols).copy()
+        if "strict_field_polygon" not in masks.columns:
+            if "field_polygon" not in masks.columns:
+                raise ValueError(
+                    "Field masks CSV must contain strict_field_polygon or field_polygon."
+                )
+            masks["strict_field_polygon"] = masks["field_polygon"]
+
+        if "tolerant_field_polygon" not in masks.columns:
+            masks["tolerant_field_polygon"] = masks["strict_field_polygon"]
+
+        masks = masks.dropna(subset=["frame", "strict_field_polygon"]).copy()
         masks = masks[masks["strict_field_polygon"].astype(str).str.len() > 0]
         masks["frame"] = masks["frame"].astype(int)
         masks = masks.sort_values("frame").drop_duplicates("frame", keep="last")

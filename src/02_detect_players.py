@@ -35,6 +35,23 @@ def main():
         default=0.25,
         help="Confidence threshold. Default: 0.25"
     )
+    parser.add_argument(
+        "--start-time",
+        type=float,
+        default=0,
+        help="Start time in seconds. Default: 0."
+    )
+    parser.add_argument(
+        "--end-time",
+        type=float,
+        default=None,
+        help="Optional end time in seconds."
+    )
+    parser.add_argument(
+        "--output-suffix",
+        default="",
+        help="Optional suffix for the output CSV stem."
+    )
 
     args = parser.parse_args()
 
@@ -44,7 +61,9 @@ def main():
     output_dir = Path("outputs") / args.venue
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    output_csv = output_dir / f"{video_path.stem}_player_detections.csv"
+    output_csv = output_dir / (
+        f"{video_path.stem}_player_detections{args.output_suffix}.csv"
+    )
 
     print("PLAYER DETECTION")
     print("----------------")
@@ -62,13 +81,20 @@ def main():
 
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    start_frame = max(0, int(round(args.start_time * fps)))
+    end_frame = total_frames
+    if args.end_time is not None:
+        end_frame = min(total_frames, int(round(args.end_time * fps)))
+    if end_frame <= start_frame:
+        raise ValueError("--end-time must be after --start-time.")
 
     rows = []
-    frame_idx = 0
+    frame_idx = start_frame
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
 
     print("\nRunning player detection on every frame...")
 
-    for _ in tqdm(range(total_frames)):
+    for _ in tqdm(range(start_frame, end_frame)):
         ret, frame = cap.read()
 
         if not ret:

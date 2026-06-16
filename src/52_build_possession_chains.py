@@ -13,6 +13,11 @@ def build_possession_chains(
     fps=25,
     min_confirm_frames=5,
     max_control_distance_px=80,
+    max_carry_forward_seconds=2.0,
+    exclude_active_participant_decisions=None,
+    instant_confirm_repaired_control=False,
+    start_max_speed_px_per_second=None,
+    start_max_distance_px=None,
 ):
     association_csv = Path(association_csv)
     output_frames_csv = Path(output_frames_csv)
@@ -38,9 +43,15 @@ def build_possession_chains(
     current_segment_start = None
     pending_player = None
     pending_count = 0
+    carry_forward_frames = 0
+    carry_forward_start_time = None
     segment_counter = 0
     output_rows = []
     segments = []
+    if exclude_active_participant_decisions is None:
+        exclude_active_participant_decisions = set()
+    else:
+        exclude_active_participant_decisions = set(exclude_active_participant_decisions)
 
     def finish_segment(end_time, end_frame, reason):
         nonlocal current_player, current_segment_id, current_segment_start
@@ -56,6 +67,9 @@ def build_possession_chains(
             "end_frame": end_frame,
             "end_reason": reason,
         })
+        current_player = None
+        current_segment_id = None
+        current_segment_start = None
 
     def start_segment(player_id, row):
         nonlocal current_player, current_segment_id, current_segment_start, segment_counter
@@ -77,18 +91,39 @@ def build_possession_chains(
             nearest_player = str(int(nearest_player)) if float(nearest_player).is_integer() else str(nearest_player)
 
         distance = row.get("nearest_player_distance_px")
+        speed = row.get("ball_speed_px_per_second")
+        advisory_decision = row.get("active_participant_advisory_decision")
+        advisory_excluded = (
+            advisory_decision in exclude_active_participant_decisions
+            if pd.notna(advisory_decision)
+            else False
+        )
+        effective_ball_state = (
+            "in_transit"
+            if row["ball_state"] == "controlled" and advisory_excluded
+            else row["ball_state"]
+        )
         controlled_evidence = (
-            row["ball_state"] == "controlled"
+            effective_ball_state == "controlled"
             and nearest_player is not None
             and pd.notna(distance)
             and float(distance) <= max_control_distance_px
+            and not advisory_excluded
         )
 
         transition_reason = ""
-        possession_state = row["ball_state"]
+        possession_state = effective_ball_state
         possession_player = current_player
 
         if controlled_evidence:
+            required_confirm_frames = (
+                1
+                if instant_confirm_repaired_control
+                and bool(row.get("ball_state_active_fallback_repair", False))
+                else min_confirm_frames
+            )
+            carry_forward_frames = 0
+            carry_forward_start_time = None
             if nearest_player == current_player:
                 pending_player = None
                 pending_count = 0
@@ -101,15 +136,35 @@ def build_possession_chains(
                     pending_player = nearest_player
                     pending_count = 1
 
-                if pending_count >= min_confirm_frames:
-                    if current_player is not None:
-                        finish_segment(time_seconds, frame, "confirmed_new_controller")
-                    start_segment(nearest_player, row)
-                    transition_reason = "confirmed_new_controller"
-                    pending_player = None
-                    pending_count = 0
-                    possession_state = "controlled"
-                    possession_player = current_player
+                if pending_count >= required_confirm_frames:
+                    start_blocked = (
+                        current_player is None
+                        and (
+                            (
+                                start_max_speed_px_per_second is not None
+                                and pd.notna(speed)
+                                and float(speed) > start_max_speed_px_per_second
+                            )
+                            or (
+                                start_max_distance_px is not None
+                                and pd.notna(distance)
+                                and float(distance) > start_max_distance_px
+                            )
+                        )
+                    )
+                    if start_blocked:
+                        possession_state = "pending_control"
+                        possession_player = None
+                        transition_reason = "new_possession_start_not_stable"
+                    else:
+                        if current_player is not None:
+                            finish_segment(time_seconds, frame, "confirmed_new_controller")
+                        start_segment(nearest_player, row)
+                        transition_reason = "confirmed_new_controller"
+                        pending_player = None
+                        pending_count = 0
+                        possession_state = "controlled"
+                        possession_player = current_player
                 elif current_player is None:
                     possession_state = "pending_control"
                     possession_player = None
@@ -120,15 +175,32 @@ def build_possession_chains(
         else:
             pending_player = None
             pending_count = 0
-            if current_player is not None and row["ball_state"] in [
+            if current_player is not None and effective_ball_state in [
                 "in_transit",
                 "loose_or_unclear",
             ]:
-                possession_state = row["ball_state"]
-                possession_player = current_player
+                carry_forward_frames += 1
+                if carry_forward_start_time is None:
+                    carry_forward_start_time = time_seconds
+                carry_forward_seconds = time_seconds - carry_forward_start_time
+                if (
+                    max_carry_forward_seconds >= 0
+                    and carry_forward_seconds > max_carry_forward_seconds
+                ):
+                    finish_segment(time_seconds, frame, "carry_forward_timeout")
+                    transition_reason = "carry_forward_timeout"
+                    possession_state = effective_ball_state
+                    possession_player = None
+                    carry_forward_frames = 0
+                    carry_forward_start_time = None
+                else:
+                    possession_state = effective_ball_state
+                    possession_player = current_player
             elif current_player is None:
-                possession_state = row["ball_state"]
+                possession_state = effective_ball_state
                 possession_player = None
+                carry_forward_frames = 0
+                carry_forward_start_time = None
 
         out_row = row.to_dict()
         out_row.update({
@@ -137,7 +209,15 @@ def build_possession_chains(
             "possession_segment_id": current_segment_id,
             "pending_player_id": pending_player,
             "pending_confirm_frames": pending_count,
+            "carry_forward_frames": carry_forward_frames,
+            "carry_forward_seconds": (
+                0.0
+                if carry_forward_start_time is None
+                else time_seconds - carry_forward_start_time
+            ),
             "transition_reason": transition_reason,
+            "active_participant_advisory_excluded_from_control": advisory_excluded,
+            "effective_ball_state_for_possession": effective_ball_state,
         })
         output_rows.append(out_row)
 
@@ -146,7 +226,19 @@ def build_possession_chains(
         finish_segment(float(last["time_seconds"]), int(last["frame"]), "end_of_input")
 
     frames_out = pd.DataFrame(output_rows)
-    segments_out = pd.DataFrame(segments)
+    segments_out = pd.DataFrame(
+        segments,
+        columns=[
+            "segment_id",
+            "player_id",
+            "start_time",
+            "end_time",
+            "duration_seconds",
+            "start_frame",
+            "end_frame",
+            "end_reason",
+        ],
+    )
 
     output_frames_csv.parent.mkdir(parents=True, exist_ok=True)
     output_segments_csv.parent.mkdir(parents=True, exist_ok=True)
@@ -177,7 +269,60 @@ def main():
     parser.add_argument("--fps", type=float, default=25)
     parser.add_argument("--min-confirm-frames", type=int, default=5)
     parser.add_argument("--max-control-distance-px", type=float, default=80)
+    parser.add_argument(
+        "--max-carry-forward-seconds",
+        type=float,
+        default=2.0,
+        help=(
+            "Seconds to keep the prior controller through in-transit/loose frames "
+            "before ending the possession. Use a negative value to disable timeout."
+        ),
+    )
+    parser.add_argument(
+        "--exclude-active-participant-decisions",
+        default="",
+        help=(
+            "Comma-separated advisory decisions that should not count as controlled "
+            "possession evidence, for example 'high_confidence_non_active'. "
+            "Requires association rows from src/60_score_active_participants.py."
+        ),
+    )
+    parser.add_argument(
+        "--instant-confirm-repaired-control",
+        action="store_true",
+        help=(
+            "Immediately confirm rows repaired by the active-fallback ball-state "
+            "pass as controlled possession. This keeps normal confirmation "
+            "thresholds unchanged for all other rows."
+        ),
+    )
+    parser.add_argument(
+        "--start-max-speed",
+        type=float,
+        default=None,
+        help=(
+            "Optional maximum ball speed for starting a brand-new possession "
+            "from no current owner. New-owner switches during an active chain are "
+            "not affected."
+        ),
+    )
+    parser.add_argument(
+        "--start-max-distance",
+        type=float,
+        default=None,
+        help=(
+            "Optional maximum ball-to-player distance for starting a brand-new "
+            "possession from no current owner. New-owner switches during an "
+            "active chain are not affected."
+        ),
+    )
     args = parser.parse_args()
+
+    exclude_active_participant_decisions = [
+        decision.strip()
+        for decision in args.exclude_active_participant_decisions.split(",")
+        if decision.strip()
+    ]
 
     build_possession_chains(
         association_csv=args.association_csv,
@@ -186,9 +331,13 @@ def main():
         fps=args.fps,
         min_confirm_frames=args.min_confirm_frames,
         max_control_distance_px=args.max_control_distance_px,
+        max_carry_forward_seconds=args.max_carry_forward_seconds,
+        exclude_active_participant_decisions=exclude_active_participant_decisions,
+        instant_confirm_repaired_control=args.instant_confirm_repaired_control,
+        start_max_speed_px_per_second=args.start_max_speed,
+        start_max_distance_px=args.start_max_distance,
     )
 
 
 if __name__ == "__main__":
     main()
-

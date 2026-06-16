@@ -56,6 +56,7 @@ def associate_ball_to_on_field_players(
     control_distance_px=80,
     controlled_speed_px_per_second=500,
     transit_speed_px_per_second=700,
+    control_field_zones=None,
 ):
     ball_csv = Path(ball_csv)
     player_csv = Path(player_csv)
@@ -105,6 +106,10 @@ def associate_ball_to_on_field_players(
     )
 
     output_rows = []
+    if control_field_zones is None:
+        control_field_zones = {"strict", "tolerant"}
+    else:
+        control_field_zones = set(control_field_zones)
 
     for _, b in ball.iterrows():
         frame = int(b["frame"])
@@ -152,16 +157,20 @@ def associate_ball_to_on_field_players(
                 best_distance = distance
                 best_player = p
 
-        if best_distance > max_distance_px:
-            association_status = "too_far"
-            ball_state = "loose_or_unclear"
-
-        elif pd.notna(speed) and speed >= transit_speed_px_per_second:
+        if pd.notna(speed) and speed >= transit_speed_px_per_second:
             association_status = "near_player_but_fast"
             ball_state = "in_transit"
 
-        elif best_distance <= control_distance_px and (
+        elif best_distance > max_distance_px:
+            association_status = "too_far"
+            ball_state = "loose_or_unclear"
+
+        elif (
+            best_player.get("field_zone") in control_field_zones
+            and best_distance <= control_distance_px
+            and (
             pd.isna(speed) or speed <= controlled_speed_px_per_second
+            )
         ):
             association_status = "associated"
             ball_state = "controlled"
@@ -219,6 +228,14 @@ def main():
     parser.add_argument("--control-distance-px", type=float, default=80)
     parser.add_argument("--controlled-speed", type=float, default=500)
     parser.add_argument("--transit-speed", type=float, default=700)
+    parser.add_argument(
+        "--control-field-zones",
+        default="strict,tolerant",
+        help=(
+            "Comma-separated field zones allowed to create controlled-ball evidence. "
+            "Use 'strict' to prevent tolerant sideline detections from ending passes."
+        ),
+    )
 
     parser.add_argument(
         "--strict-field-polygon",
@@ -248,6 +265,11 @@ def main():
         control_distance_px=args.control_distance_px,
         controlled_speed_px_per_second=args.controlled_speed,
         transit_speed_px_per_second=args.transit_speed,
+        control_field_zones=[
+            zone.strip()
+            for zone in args.control_field_zones.split(",")
+            if zone.strip()
+        ],
     )
 
 
