@@ -286,6 +286,14 @@ The first Army game-state review package is seeded from the completed
 event-impact review and saved in
 `outputs/game_state_review/army_from_event_impact/`.
 
+That completed Army review labeled 10 of 14 moments as `live`, 2 as
+`goal_stoppage`, and 2 as `restart_setup` with `free_kick` restart type.
+`src/64_apply_game_state_reviews.py` applies reviewed non-live windows to
+frame-level possession outputs. On the Army candidate it marked 176 frame rows
+as non-live: 132 `goal_stoppage` rows and 44 `restart_setup` rows. The reviewed
+post-goal possession segment was entirely non-live, so downstream event
+derivation should ignore it rather than treating it as a possession-chain error.
+
 Example review outputs:
 
 - `outputs/field_segmentation_strict_tolerant_evaluation/army_possession_chain_overlay_first60s.mp4`
