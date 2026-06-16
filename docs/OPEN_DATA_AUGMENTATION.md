@@ -94,6 +94,40 @@ Football League videos in 720p and that no extracted features are provided, so
 end-to-end methods are expected. This is useful, but heavier than simply
 importing JSON labels.
 
+### Local Probe Result
+
+After installing `SoccerNet`, `src/65_probe_soccernet_ball_action.py` confirmed:
+
+- installed package version: `0.1.62`;
+- local package metadata includes Ball Action Spotting splits;
+- no dataset download is needed to inspect the split lists;
+- downloader support for `spotting-ball-2023` points at zip files named
+  `train.zip`, `valid.zip`, `test.zip`, and `challenge.zip`;
+- the downloader block uses the OwnCloud user/key
+  `A1ncJfjV31lPSTa` for the fine-grained spotting splits;
+- no download has been attempted yet.
+
+Local split metadata:
+
+| Split | Games |
+| --- | ---: |
+| train | 4 |
+| valid | 1 |
+| test | 2 |
+| challenge | 2 |
+
+Example train games:
+
+- `2019-10-01 - Blackburn Rovers - Nottingham Forest`
+- `2019-10-01 - Brentford - Bristol City`
+- `2019-10-01 - Hull City - Sheffield Wednesday`
+
+Run the local probe with:
+
+```bash
+.venv/bin/python src/65_probe_soccernet_ball_action.py
+```
+
 ## Practical Integration Options
 
 ### Option A: Use SoccerNet Labels As Reference Only
@@ -146,14 +180,17 @@ Cons:
 Do a small, reversible SoccerNet probe:
 
 1. Install only the lightweight SoccerNet package in the local virtual
-   environment.
-2. Try listing/downloading metadata or a tiny sample for `spotting-ball-2023`.
-3. If access is blocked by password/NDA, pause and decide whether it is worth
+   environment. Done.
+2. Inspect local split metadata for `spotting-ball-2023`. Done in
+   `src/65_probe_soccernet_ball_action.py`.
+3. Try downloading the smallest useful split, probably `valid`, only after
+   deciding where to store it and confirming access requirements.
+4. If access is blocked by password/NDA, pause and decide whether it is worth
    requesting access.
-4. If access works, inspect one label file and one short video.
-5. Build `src/65_map_soccernet_ball_actions.py` to convert SoccerNet actions
+5. If access works, inspect one label file and one short video.
+6. Build `src/66_map_soccernet_ball_actions.py` to convert SoccerNet actions
    into our candidate schema.
-6. Compare the mapped classes against our reviewed Army/Le Moyne moments.
+7. Compare the mapped classes against our reviewed Army/Le Moyne moments.
 
 Success criteria:
 
