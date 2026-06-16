@@ -26,8 +26,9 @@ The numbered scripts in `src/` represent the working pipeline:
 - Scripts 39-43: ball-player association and on-field player filtering.
 - Scripts 44-50: manual/automatic playable-field masks, segmentation training,
   evaluation, and failure-batch review.
-- Scripts 51-52: reviewed-possession event derivation and possession-chain
-  smoothing.
+- Scripts 51-64: reviewed-possession event derivation, possession-chain
+  smoothing, event-impact review, game-state review, and reviewed non-live
+  window application.
 
 ## Playable-Field Decisions
 
@@ -110,9 +111,11 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Evaluate `src/52_build_possession_chains.py` overlays against the known
-   pass-in-flight false ownership cases.
-2. Add team classification and persistent player identity to the broadcast
+1. Wire `game_state_is_live` into event derivation so non-live reviewed windows
+   do not produce pass/event candidates.
+2. Inspect SoccerNet Ball Action Spotting access and baselines using
+   `docs/OPEN_DATA_AUGMENTATION.md`.
+3. Add team classification and persistent player identity to the broadcast
    video pipeline.
-3. Train/evaluate automatic possession assignment before expanding event
+4. Train/evaluate automatic possession assignment before expanding event
    inference beyond completed-pass candidates.
