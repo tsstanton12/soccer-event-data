@@ -65,6 +65,28 @@ Derivation rule:
 - same `half`;
 - transition gap from previous end to next start is between `0` and the
   configured maximum, currently `2.0` seconds.
+- if reviewed game-state intervals are supplied, neither possession segment nor
+  the transition between them may overlap a non-live interval.
+
+`src/51_derive_events_from_possession.py` accepts optional reviewed game-state
+intervals:
+
+```bash
+.venv/bin/python src/51_derive_events_from_possession.py \
+  data/soccertrack/117093/reviewed/117093_1st_half_review_0000_0060_possession_labels.json \
+  --output data/soccertrack/117093/derived/117093_1st_half_review_0000_0060_event_candidates.json \
+  --game-state-intervals outputs/game_state_review/<matching_clip>/reviewed_game_state_intervals.csv
+```
+
+The output JSON includes:
+
+- `event_count`
+- `skipped_event_count`
+- `events`
+- `skipped_events`
+
+Skipped events include a `reason`, `game_state_label`, `restart_type`, and
+`source_review_id` so a reviewer can see why they were removed.
 
 This still produces candidates. Later versions should distinguish true passes
 from deflections, touches, carries, set-piece restarts, and tracking artifacts.
