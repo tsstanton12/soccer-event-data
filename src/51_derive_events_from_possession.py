@@ -86,7 +86,17 @@ def find_non_live_overlap(start, end, non_live_intervals):
     return None
 
 
-def derive_completed_passes(payload, segments, max_gap_seconds, non_live_intervals=None):
+def is_unknown_team(team):
+    return str(team or "").strip().lower() in {"", "unknown", "unk", "none", "nan"}
+
+
+def derive_completed_passes(
+    payload,
+    segments,
+    max_gap_seconds,
+    non_live_intervals=None,
+    allow_unknown_team=False,
+):
     if non_live_intervals is None:
         non_live_intervals = []
 
@@ -109,11 +119,28 @@ def derive_completed_passes(payload, segments, max_gap_seconds, non_live_interva
             "half", payload.get("half", 1)
         ):
             continue
-        if current["team"] != next_segment["team"]:
-            continue
         if current["player"] == next_segment["player"]:
             continue
         if gap < 0 or gap > max_gap_seconds:
+            continue
+
+        current_team_unknown = is_unknown_team(current["team"])
+        next_team_unknown = is_unknown_team(next_segment["team"])
+        unknown_team_transition = current_team_unknown or next_team_unknown
+        if unknown_team_transition:
+            if not allow_unknown_team:
+                skipped.append({
+                    "from_possession_id": current.get("id", ""),
+                    "to_possession_id": next_segment.get("id", ""),
+                    "start": current["end"],
+                    "end": next_segment["start"],
+                    "reason": "unknown_team_identity",
+                    "game_state_label": "",
+                    "restart_type": "",
+                    "source_review_id": "",
+                })
+                continue
+        elif current["team"] != next_segment["team"]:
             continue
 
         non_live_overlap = find_non_live_overlap(
@@ -136,13 +163,24 @@ def derive_completed_passes(payload, segments, max_gap_seconds, non_live_interva
 
         event_id = f"event_{len(events) + 1:04d}"
         source_note = current.get("notes", "")
+        event_type = (
+            "possession_transition_candidate"
+            if unknown_team_transition
+            else "completed_pass_candidate"
+        )
+        notes = (
+            "Derived from consecutive controlled possessions with unknown team identity; "
+            "requires team classification before it can be treated as a completed pass."
+            if unknown_team_transition
+            else "Derived from consecutive reviewed controlled possessions."
+        )
         events.append({
             "id": event_id,
             "schema_version": "0.1",
             "match_id": payload.get("match_id", ""),
             "clip": payload.get("clip", ""),
             "half": current.get("half", payload.get("half", 1)),
-            "type": "completed_pass_candidate",
+            "type": event_type,
             "team": current["team"],
             "from_player": current["player"],
             "to_player": next_segment["player"],
@@ -159,7 +197,7 @@ def derive_completed_passes(payload, segments, max_gap_seconds, non_live_interva
                 float(next_segment.get("confidence", 1)),
             ),
             "review_status": "candidate",
-            "notes": "Derived from consecutive reviewed controlled possessions.",
+            "notes": notes,
         })
 
     return events, skipped
@@ -180,6 +218,15 @@ def main():
             "events overlapping non-live reviewed windows are skipped."
         ),
     )
+    parser.add_argument(
+        "--allow-unknown-team",
+        action="store_true",
+        help=(
+            "Allow unknown-team adjacent controlled possessions to emit "
+            "provisional possession_transition_candidate events. By default "
+            "unknown-team transitions are skipped."
+        ),
+    )
     args = parser.parse_args()
 
     payload, segments = load_segments(args.labels_json)
@@ -190,6 +237,7 @@ def main():
         segments,
         args.max_gap_seconds,
         non_live_intervals=non_live_intervals,
+        allow_unknown_team=args.allow_unknown_team,
     )
 
     output = Path(args.output)
@@ -213,7 +261,7 @@ def main():
     print(f"Segments: {len(segments)}")
     print(f"Non-live intervals: {len(non_live_intervals)}")
     print(f"Completed pass candidates: {len(events)}")
-    print(f"Skipped by game state: {len(skipped_events)}")
+    print(f"Skipped candidates: {len(skipped_events)}")
     print(f"Output: {output}")
 
 

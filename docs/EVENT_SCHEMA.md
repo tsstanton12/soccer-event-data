@@ -88,5 +88,29 @@ The output JSON includes:
 Skipped events include a `reason`, `game_state_label`, `restart_type`, and
 `source_review_id` so a reviewer can see why they were removed.
 
+## Auto Possession Segment Path
+
+`src/66_convert_possession_segments_to_labels.py` converts possession-chain CSV
+segments into the same JSON label shape consumed by
+`src/51_derive_events_from_possession.py`.
+
+Example:
+
+```bash
+.venv/bin/python src/66_convert_possession_segments_to_labels.py \
+  outputs/event_impact_review/army_first60_tuned/army_event_impact_candidate_start_stability_segments.csv \
+  --output outputs/game_state_review/army_from_event_impact/army_auto_possession_labels.json \
+  --match-id army_short_clip \
+  --clip army_short_clip.mp4 \
+  --team unknown
+```
+
+When team identity is `unknown`, event derivation is conservative by default:
+adjacent controlled possessions are skipped with reason `unknown_team_identity`.
+Use `--allow-unknown-team` only to emit provisional
+`possession_transition_candidate` rows for review. These are not completed pass
+candidates until team classification confirms the two possessions belong to the
+same team.
+
 This still produces candidates. Later versions should distinguish true passes
 from deflections, touches, carries, set-piece restarts, and tracking artifacts.
