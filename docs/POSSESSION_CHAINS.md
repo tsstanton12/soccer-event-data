@@ -252,6 +252,40 @@ Moyne first-minute candidate, `--start-max-speed 250 --start-max-distance 45`
 blocks the bad start at frame 776 and removes the false first-minute controlled
 segment.
 
+An Army full-clip event-impact review tested the same tuned candidate on a
+different venue. The review covered 14 clips: 7 possession starts and 7
+possession ends. The labels were 4 `correct`, 4 `merge`, 3 `shift_start`, and 3
+`wrong_state`.
+
+The Army errors point to two issues beyond the Le Moyne pass-travel fix:
+
+- controlled starts often begin too late because nearest-player identity
+  flickers while the ball is already controlled;
+- several reviewed moments happen around goals/free kicks/clearances where
+  possession state alone cannot tell whether the game is live or stopped.
+
+This argues against further tiny possession-threshold tweaks as the next main
+step. The next production layer should either merge short same-phase controlled
+fragments through detection flicker, or add an explicit game-state/dead-ball
+classifier so stopped-play possession does not pollute event derivation.
+
+`src/63_build_game_state_review.py` creates short review clips for that
+game-state layer. The review labels are:
+
+- `live`: normal active play; possession/event derivation should consider the
+  moment.
+- `dead_ball`: play is stopped and no restart action is currently happening.
+- `restart_setup`: players are setting up for a restart, but the ball has not
+  been put back into play.
+- `restart_kick`: the restart touch/throw/kick is happening at the center
+  moment.
+- `goal_stoppage`: the moment is part of post-goal stoppage or kickoff reset.
+- `unclear`: video context is not enough to decide.
+
+The first Army game-state review package is seeded from the completed
+event-impact review and saved in
+`outputs/game_state_review/army_from_event_impact/`.
+
 Example review outputs:
 
 - `outputs/field_segmentation_strict_tolerant_evaluation/army_possession_chain_overlay_first60s.mp4`
