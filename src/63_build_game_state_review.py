@@ -201,7 +201,7 @@ def build_game_state_review(video_path, frames_csv, seed_manifest_csv, output_di
 
         writer = cv2.VideoWriter(
             str(clip_path),
-            cv2.VideoWriter_fourcc(*"mp4v"),
+            cv2.VideoWriter_fourcc(*"avc1"),
             fps,
             (width, height),
         )

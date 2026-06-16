@@ -250,7 +250,7 @@ def build_event_impact_review(
         clip_path = output_dir / f"{stem}.mp4"
         writer = cv2.VideoWriter(
             str(clip_path),
-            cv2.VideoWriter_fourcc(*"mp4v"),
+            cv2.VideoWriter_fourcc(*"avc1"),
             fps,
             (width, height),
         )
