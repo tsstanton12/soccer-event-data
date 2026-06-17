@@ -26,10 +26,11 @@ The numbered scripts in `src/` represent the working pipeline:
 - Scripts 39-43: ball-player association and on-field player filtering.
 - Scripts 44-50: manual/automatic playable-field masks, segmentation training,
   evaluation, and failure-batch review.
-- Scripts 51-67: reviewed-possession event derivation, possession-chain
+- Scripts 51-71: reviewed-possession event derivation, possession-chain
   smoothing, event-impact review, game-state review, reviewed non-live window
-  application, auto-segment conversion into event-derivation inputs, and
-  provisional jersey-color team classification.
+  application, auto-segment conversion into event-derivation inputs,
+  provisional jersey-color team classification, team-review application, and
+  simple persistent player tracking/review overlays.
 
 ## Playable-Field Decisions
 
@@ -112,10 +113,35 @@ SoccerTrack v2 is CC BY 4.0; preserve attribution in derived data.
 
 ## Next Work
 
-1. Review/evaluate jersey-color team labels across more clips, then add
-   persistent player identity so auto possession transitions can become
-   stronger pass candidates instead of frame-local transitions.
+1. Review/evaluate simple persistent player tracks, then rerun ball-player
+   association and possession chains with persistent `track_id` values instead
+   of frame-local detector IDs.
 2. Inspect SoccerNet Ball Action Spotting access and baselines using
    `docs/OPEN_DATA_AUGMENTATION.md`.
 3. Train/evaluate automatic possession assignment before expanding event
    inference beyond completed-pass candidates.
+
+## Simple Player Tracking
+
+`src/70_track_players_simple.py` assigns persistent `track_id` values to
+frame-level player detections using bounding-box overlap, foot-point distance,
+and box-size consistency. It is intentionally lightweight: it does not use
+appearance embeddings or a learned re-identification model, but it gives the
+pipeline a stable identity column that is much better than the detector's
+per-frame `player_id`.
+
+Initial tracked outputs:
+
+- `outputs/player_tracking/army_players_on_field_tracked.csv`
+- `outputs/player_tracking/lemoyne_players_on_field_tracked.csv`
+- `outputs/player_tracking/army_track_overlay_first60s.mp4`
+- `outputs/player_tracking/lemoyne_track_overlay_first60s.mp4`
+
+Both were generated with `--replace-player-id`, so the `player_id` column is
+now the persistent track ID and the original per-frame detector ID is preserved
+as `detector_player_id`. These tracks should be visually reviewed before using
+them as final player identities, but they are the right next input for rerunning
+ball-player association and possession chains.
+
+`src/71_visualize_player_tracks.py` renders a video overlay with `T<track_id>`
+labels so track continuity can be checked visually.
