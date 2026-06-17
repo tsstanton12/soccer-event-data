@@ -20,6 +20,8 @@ The hard-frame ball model evaluation workflow is documented in
 `docs/BALL_MODEL_EVALUATION.md`.
 The full-clip rerun workflow for a new ball model is documented in
 `docs/BALL_MODEL_RERUN.md`.
+The ball interpolation sweep workflow is documented in
+`docs/BALL_INTERPOLATION_SWEEPS.md`.
 The current human-review queue is tracked in `docs/MANUAL_NEXT_STEPS.md`.
 
 ## Current Pipeline

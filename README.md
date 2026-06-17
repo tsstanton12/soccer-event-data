@@ -18,6 +18,7 @@ ball-player association, and early possession/event labeling.
 - `docs/PROJECT_ROADMAP.md`: reset plan organized by functional pipeline layer
 - `docs/BALL_MODEL_EVALUATION.md`: hard-frame ball model evaluation workflow
 - `docs/BALL_MODEL_RERUN.md`: full-clip rerun workflow for a new ball model
+- `docs/BALL_INTERPOLATION_SWEEPS.md`: interpolation sweep workflow and notes
 - `docs/MANUAL_NEXT_STEPS.md`: current human-review queue
 
 Large local assets such as videos, model weights, training images, generated
