@@ -15,6 +15,13 @@ Turn broadcast soccer video into structured event data:
 5. Derive events such as completed passes.
 6. Map events into field coordinates for downstream analysis such as xT.
 
+The reset roadmap is now tracked separately in `docs/PROJECT_ROADMAP.md`.
+The hard-frame ball model evaluation workflow is documented in
+`docs/BALL_MODEL_EVALUATION.md`.
+The full-clip rerun workflow for a new ball model is documented in
+`docs/BALL_MODEL_RERUN.md`.
+The current human-review queue is tracked in `docs/MANUAL_NEXT_STEPS.md`.
+
 ## Current Pipeline
 
 The numbered scripts in `src/` represent the working pipeline:
@@ -185,3 +192,39 @@ Use the `min_confirm_frames=15` overlays as the next review candidate:
 
 - `outputs/player_tracking/association_rerun/army_tuned_tracked_min15_possession_overlay_first60s.mp4`
 - `outputs/player_tracking/association_rerun/lemoyne_tuned_tracked_min15_possession_overlay_first60s.mp4`
+
+Follow-up visual review found:
+
+- Owner switches during pass travel are reduced with `min_confirm_frames=15`.
+- Army remains somewhat jumpy, but many remaining incorrect switches appear to
+  be caused by bad ball detections rather than bad player tracking.
+- LeMoyne is close to the real possession flow. Remaining errors are mostly
+  non-active people such as substitutes or assistant referees, plus occasional
+  one-touch possessions that stay `in_transit` through the touch.
+
+Focused review clips were generated from the min-15 tracked chains:
+
+- `outputs/player_tracking/association_rerun/min15_event_impact_review/army_first60/event_impact_review_order.html`
+- `outputs/player_tracking/association_rerun/min15_event_impact_review/lemoyne_first60/event_impact_review_order.html`
+
+The next likely fixes are targeted ball-detection review/improvement for Army
+and stronger non-active participant filtering for LeMoyne before deriving
+events from the tracked chains.
+
+`src/77_evaluate_player_track_stability.py` now evaluates persistent player
+tracks and writes a per-track summary, a possession-relevant trouble-track
+list, and a markdown report.
+
+Current track-stability outputs:
+
+- `outputs/player_tracking/track_stability/lemoyne_min15/`
+- `outputs/player_tracking/track_stability/army_min15/`
+
+The first diagnostic pass supports the visual review: LeMoyne is mostly stable
+where possession is concerned, while Army still has a meaningful unstable-track
+component. LeMoyne had 241 possession rows tied to non-stable tracks out of
+2,927 possession rows. Army had 347 possession rows tied to non-stable tracks
+out of 1,592 possession rows, plus 659 controlled-nearest rows tied to
+non-stable tracks. That means Army's remaining possession noise is not only a
+ball-detection problem; it also needs track-stability gating before we trust
+ownership.

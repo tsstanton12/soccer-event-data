@@ -18,6 +18,8 @@ def build_possession_chains(
     instant_confirm_repaired_control=False,
     start_max_speed_px_per_second=None,
     start_max_distance_px=None,
+    track_stability_csv=None,
+    exclude_track_stability_flags=None,
 ):
     association_csv = Path(association_csv)
     output_frames_csv = Path(output_frames_csv)
@@ -52,6 +54,27 @@ def build_possession_chains(
         exclude_active_participant_decisions = set()
     else:
         exclude_active_participant_decisions = set(exclude_active_participant_decisions)
+    if exclude_track_stability_flags is None:
+        exclude_track_stability_flags = set()
+    else:
+        exclude_track_stability_flags = set(exclude_track_stability_flags)
+
+    track_stability_by_id = {}
+    if track_stability_csv:
+        stability = pd.read_csv(track_stability_csv)
+        required_stability = ["track_id", "stability_flag"]
+        missing_stability = [
+            column for column in required_stability if column not in stability.columns
+        ]
+        if missing_stability:
+            raise ValueError(
+                f"Track stability CSV missing required columns: {missing_stability}"
+            )
+        track_stability_by_id = {
+            str(int(row["track_id"])): row["stability_flag"]
+            for _, row in stability.iterrows()
+            if pd.notna(row["track_id"])
+        }
 
     def finish_segment(end_time, end_frame, reason):
         nonlocal current_player, current_segment_id, current_segment_start
@@ -98,9 +121,16 @@ def build_possession_chains(
             if pd.notna(advisory_decision)
             else False
         )
+        track_stability_flag = track_stability_by_id.get(nearest_player, "")
+        track_stability_excluded = (
+            track_stability_flag in exclude_track_stability_flags
+            if track_stability_flag
+            else False
+        )
         effective_ball_state = (
             "in_transit"
-            if row["ball_state"] == "controlled" and advisory_excluded
+            if row["ball_state"] == "controlled"
+            and (advisory_excluded or track_stability_excluded)
             else row["ball_state"]
         )
         controlled_evidence = (
@@ -109,6 +139,7 @@ def build_possession_chains(
             and pd.notna(distance)
             and float(distance) <= max_control_distance_px
             and not advisory_excluded
+            and not track_stability_excluded
         )
 
         transition_reason = ""
@@ -217,6 +248,8 @@ def build_possession_chains(
             ),
             "transition_reason": transition_reason,
             "active_participant_advisory_excluded_from_control": advisory_excluded,
+            "track_stability_flag": track_stability_flag,
+            "track_stability_excluded_from_control": track_stability_excluded,
             "effective_ball_state_for_possession": effective_ball_state,
         })
         output_rows.append(out_row)
@@ -316,12 +349,34 @@ def main():
             "active chain are not affected."
         ),
     )
+    parser.add_argument(
+        "--track-stability-csv",
+        default=None,
+        help=(
+            "Optional per-track stability summary from "
+            "src/77_evaluate_player_track_stability.py."
+        ),
+    )
+    parser.add_argument(
+        "--exclude-track-stability-flags",
+        default="",
+        help=(
+            "Comma-separated stability_flag values that should not count as "
+            "controlled possession evidence, for example "
+            "'short_track,jumpy_track,gappy_track'."
+        ),
+    )
     args = parser.parse_args()
 
     exclude_active_participant_decisions = [
         decision.strip()
         for decision in args.exclude_active_participant_decisions.split(",")
         if decision.strip()
+    ]
+    exclude_track_stability_flags = [
+        flag.strip()
+        for flag in args.exclude_track_stability_flags.split(",")
+        if flag.strip()
     ]
 
     build_possession_chains(
@@ -336,6 +391,8 @@ def main():
         instant_confirm_repaired_control=args.instant_confirm_repaired_control,
         start_max_speed_px_per_second=args.start_max_speed,
         start_max_distance_px=args.start_max_distance,
+        track_stability_csv=args.track_stability_csv,
+        exclude_track_stability_flags=exclude_track_stability_flags,
     )
 
 

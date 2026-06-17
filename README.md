@@ -15,6 +15,10 @@ ball-player association, and early possession/event labeling.
 - `tools/possession-lab/`: browser tool for reviewing possession labels and
   completed-pass candidates
 - `docs/PROJECT_CONTEXT.md`: current decisions, results, and roadmap
+- `docs/PROJECT_ROADMAP.md`: reset plan organized by functional pipeline layer
+- `docs/BALL_MODEL_EVALUATION.md`: hard-frame ball model evaluation workflow
+- `docs/BALL_MODEL_RERUN.md`: full-clip rerun workflow for a new ball model
+- `docs/MANUAL_NEXT_STEPS.md`: current human-review queue
 
 Large local assets such as videos, model weights, training images, generated
 outputs, and experiment runs are intentionally excluded from Git.
@@ -27,4 +31,3 @@ python3 -m http.server 8000
 ```
 
 Then open `http://localhost:8000`.
-
