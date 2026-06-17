@@ -169,3 +169,19 @@ frame-local-ID reviewed candidates. That is expected to some degree: detector
 IDs reset every frame and can accidentally hide controller switches. The
 tracked overlays should be reviewed before using these segments for event
 derivation.
+
+Initial visual review found that many tracked-ID switches, especially in the
+Army clip, are noisy nearest-player changes while the ball is traveling. The
+nearest player may be correctly identified, but possession should not change
+owners until a receiver has clearly controlled the ball. A first threshold sweep
+using persistent IDs showed:
+
+| Clip | `min_confirm_frames=5` | `8` | `12` | `15` | `20` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Army segments | 92 | 66 | 44 | 27 | 19 |
+| LeMoyne segments | 72 | 54 | 39 | 30 | 28 |
+
+Use the `min_confirm_frames=15` overlays as the next review candidate:
+
+- `outputs/player_tracking/association_rerun/army_tuned_tracked_min15_possession_overlay_first60s.mp4`
+- `outputs/player_tracking/association_rerun/lemoyne_tuned_tracked_min15_possession_overlay_first60s.mp4`
