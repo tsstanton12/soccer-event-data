@@ -40,8 +40,8 @@ pipeline around it.
   reviewed non-active tracks with `src/78_apply_track_eligibility_reviews.py`.
 - After the Roboflow batch is complete, train/export the next ball model and run
   the hard-frame evaluation workflow in `docs/BALL_MODEL_EVALUATION.md`.
-  Start by validating the Roboflow export with
-  `src/80_validate_roboflow_ball_export.py`.
+  The easiest path is the post-Roboflow handoff runner:
+  `src/82_run_post_roboflow_handoff.py`.
 
 ## Codex-Side Queue
 

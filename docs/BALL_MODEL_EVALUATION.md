@@ -3,6 +3,29 @@
 Use this after annotating the hard-frame batch in Roboflow and training a new
 ball detector.
 
+## One-Command Handoff
+
+After Roboflow annotation, export YOLO labels and train/export the new model.
+Then run:
+
+```bash
+.venv/bin/python src/82_run_post_roboflow_handoff.py \
+  --model path/to/roboflow_best.pt \
+  --labels-dir path/to/roboflow/export/labels \
+  --full-clips lemoyne,army
+```
+
+Add `--dry-run` first to preview the planned commands. If an old hard-frame
+evaluation exists, add:
+
+```bash
+--old-evaluation outputs/ball_detection_review/old_model_evaluation/ball_detection_review_evaluation_details.csv
+```
+
+The handoff runner validates the export, runs the model on the 750 hard frames,
+evaluates the result, optionally compares old vs new model performance, and can
+rerun full clips through the stability-gated possession overlay workflow.
+
 ## Training Batch
 
 Upload only the clean frames:
