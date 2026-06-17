@@ -2,6 +2,40 @@
 
 Use this after a new Roboflow-trained ball model is exported.
 
+## One-Command Rerun
+
+`src/79_rerun_ball_model_pipeline.py` runs the full clip workflow once a new
+model is ready.
+
+LeMoyne example:
+
+```sh
+.venv/bin/python src/79_rerun_ball_model_pipeline.py \
+  --venue-label lemoyne \
+  --video videos/lemoyne_short_clip.mp4 \
+  --players outputs/player_tracking/lemoyne_players_on_field_tracked.csv \
+  --track-stability outputs/player_tracking/track_stability/lemoyne_min15/track_stability_summary.csv \
+  --fps 30 \
+  --model path/to/roboflow_best.pt
+```
+
+Army example:
+
+```sh
+.venv/bin/python src/79_rerun_ball_model_pipeline.py \
+  --venue-label army \
+  --video videos/army_short_clip.mp4 \
+  --players outputs/player_tracking/army_players_on_field_tracked.csv \
+  --track-stability outputs/player_tracking/track_stability/army_min15/track_stability_summary.csv \
+  --fps 25 \
+  --model path/to/roboflow_best.pt
+```
+
+Add `--dry-run` first if you only want to preview the commands and output
+paths.
+
+The script writes into `outputs/<venue-label>_new_ball_model/` by default.
+
 ## 1. Evaluate The New Model On The Hard Batch
 
 First run the hard-frame workflow in `docs/BALL_MODEL_EVALUATION.md`. Do not

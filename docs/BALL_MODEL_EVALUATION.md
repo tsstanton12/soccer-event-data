@@ -39,6 +39,19 @@ Example:
 
 Empty or missing `.txt` files are treated as no-ball/null frames.
 
+Validate the export before training/evaluation:
+
+```bash
+.venv/bin/python src/80_validate_roboflow_ball_export.py \
+  --manifest outputs/ball_detection_review/multi_venue_750/ball_detection_review_manifest.csv \
+  --labels-dir path/to/roboflow/export/labels \
+  --images-dir outputs/ball_detection_review/multi_venue_750/clean_frames \
+  --output-dir outputs/ball_detection_review/roboflow_export_validation
+```
+
+The validator checks image coverage, YOLO label shape, class IDs, valid box
+coordinates, visible-ball/null counts, and venue/reason breakdowns.
+
 ## Evaluate A Model
 
 Run the new model on the same clean-frame images and save predictions as a CSV.
@@ -79,6 +92,23 @@ The evaluator reports:
 - false-positive rate on null/no-ball frames;
 - poor localization rate;
 - results by venue and hard-case reason.
+
+## Compare Old And New Models
+
+After evaluating two models on the same Roboflow export, compare the detail
+CSVs:
+
+```bash
+.venv/bin/python src/81_compare_ball_model_evaluations.py \
+  --old-evaluation outputs/ball_detection_review/old_model_evaluation/ball_detection_review_evaluation_details.csv \
+  --new-evaluation outputs/ball_detection_review/new_model_evaluation/ball_detection_review_evaluation_details.csv \
+  --output-dir outputs/ball_detection_review/old_vs_new_model_comparison \
+  --old-name current_model \
+  --new-name roboflow_retrain
+```
+
+This reports improved/regressed/unchanged hard frames plus metric deltas by
+venue and hard-case reason.
 
 ## Why This Matters
 

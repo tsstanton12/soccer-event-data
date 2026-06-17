@@ -21,6 +21,18 @@ pipeline around it.
    - Use the single label `ball`.
    - If the ball is not visible, leave the image as a null/no-object frame.
 
+## Optional Review
+
+- If there is extra time after the two current queue items, compare the
+  stability-gated first-minute possession overlays:
+  - `outputs/player_tracking/association_rerun/stability_gated/army_tuned_tracked_min15_stability_gated_overlay_first60s.mp4`
+  - `outputs/player_tracking/association_rerun/stability_gated/lemoyne_tuned_tracked_min15_stability_gated_overlay_first60s.mp4`
+- Focus question: does stability gating reduce bad ownership switches without
+  hiding real quick possessions?
+- Short event-impact review pages are also available:
+  - `outputs/player_tracking/association_rerun/stability_gated/event_impact_review/army_first60/event_impact_review_order.html`
+  - `outputs/player_tracking/association_rerun/stability_gated/event_impact_review/lemoyne_first60/event_impact_review_order.html`
+
 ## Waiting On Completion
 
 - After the 65-image non-active review is complete, summarize reviewed player
@@ -28,6 +40,8 @@ pipeline around it.
   reviewed non-active tracks with `src/78_apply_track_eligibility_reviews.py`.
 - After the Roboflow batch is complete, train/export the next ball model and run
   the hard-frame evaluation workflow in `docs/BALL_MODEL_EVALUATION.md`.
+  Start by validating the Roboflow export with
+  `src/80_validate_roboflow_ball_export.py`.
 
 ## Codex-Side Queue
 
