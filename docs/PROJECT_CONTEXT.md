@@ -145,3 +145,27 @@ ball-player association and possession chains.
 
 `src/71_visualize_player_tracks.py` renders a video overlay with `T<track_id>`
 labels so track continuity can be checked visually.
+
+`src/72_remap_association_to_tracks.py` preserves tuned association/ball-state
+rows while replacing frame-local `nearest_player_id` values with persistent
+`track_id` values. This is preferable to rebuilding association from scratch
+when reviewing the effect of persistent identity, because it keeps the
+receiver-confirmed ball-state smoothing and active-participant context already
+used in prior reviews.
+
+Tracked-ID possession rerun outputs:
+
+- `outputs/player_tracking/association_rerun/army_tuned_association_tracked_ids.csv`
+- `outputs/player_tracking/association_rerun/army_tuned_tracked_possession_chain_frames.csv`
+- `outputs/player_tracking/association_rerun/army_tuned_tracked_possession_chain_segments.csv`
+- `outputs/player_tracking/association_rerun/army_tuned_tracked_possession_overlay_first60s.mp4`
+- `outputs/player_tracking/association_rerun/lemoyne_tuned_association_tracked_ids.csv`
+- `outputs/player_tracking/association_rerun/lemoyne_tuned_tracked_possession_chain_frames.csv`
+- `outputs/player_tracking/association_rerun/lemoyne_tuned_tracked_possession_chain_segments.csv`
+- `outputs/player_tracking/association_rerun/lemoyne_tuned_tracked_possession_overlay_first60s.mp4`
+
+The first tracked-ID chain rerun produced many more segments than the previous
+frame-local-ID reviewed candidates. That is expected to some degree: detector
+IDs reset every frame and can accidentally hide controller switches. The
+tracked overlays should be reviewed before using these segments for event
+derivation.

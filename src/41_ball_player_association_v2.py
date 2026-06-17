@@ -57,6 +57,7 @@ def associate_ball_to_on_field_players(
     controlled_speed_px_per_second=500,
     transit_speed_px_per_second=700,
     control_field_zones=None,
+    recompute_time_seconds=False,
 ):
     ball_csv = Path(ball_csv)
     player_csv = Path(player_csv)
@@ -67,6 +68,8 @@ def associate_ball_to_on_field_players(
 
     ball["frame"] = ball["frame"].astype(int)
     players["frame"] = players["frame"].astype(int)
+    if recompute_time_seconds or "time_seconds" not in ball.columns:
+        ball["time_seconds"] = ball["frame"] / fps
 
     # Player foot point: better than center for soccer possession
     players["foot_x"] = (players["x1"] + players["x2"]) / 2
@@ -236,6 +239,14 @@ def main():
             "Use 'strict' to prevent tolerant sideline detections from ending passes."
         ),
     )
+    parser.add_argument(
+        "--recompute-time-seconds",
+        action="store_true",
+        help=(
+            "Overwrite ball time_seconds using frame/fps. Useful when "
+            "interpolated rows were generated with a mismatched FPS."
+        ),
+    )
 
     parser.add_argument(
         "--strict-field-polygon",
@@ -270,6 +281,7 @@ def main():
             for zone in args.control_field_zones.split(",")
             if zone.strip()
         ],
+        recompute_time_seconds=args.recompute_time_seconds,
     )
 
 
