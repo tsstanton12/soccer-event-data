@@ -20,6 +20,7 @@ ball-player association, and early possession/event labeling.
 - `docs/BALL_MODEL_RERUN.md`: full-clip rerun workflow for a new ball model
 - `docs/BALL_INTERPOLATION_SWEEPS.md`: interpolation sweep workflow and notes
 - `docs/MANUAL_NEXT_STEPS.md`: current human-review queue
+- `docs/HANDOFF_2026_06_18.md`: latest off-repository ChatGPT/Codex handoff
 
 Large local assets such as videos, model weights, training images, generated
 outputs, and experiment runs are intentionally excluded from Git.

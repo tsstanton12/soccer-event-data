@@ -5,13 +5,21 @@ ball detector.
 
 ## One-Command Handoff
 
-After Roboflow annotation, export YOLO labels and train/export the new model.
-Then run:
+After Roboflow annotation, train/export the new model. If the YOLO labels export
+is ready, run the full validation/evaluation handoff:
 
 ```bash
 .venv/bin/python src/82_run_post_roboflow_handoff.py \
   --model path/to/roboflow_best.pt \
   --labels-dir path/to/roboflow/export/labels \
+  --full-clips lemoyne,army
+```
+
+If the labels export is not ready yet, run model-only overlay mode first:
+
+```bash
+.venv/bin/python src/82_run_post_roboflow_handoff.py \
+  --model path/to/roboflow_best.pt \
   --full-clips lemoyne,army
 ```
 
@@ -22,9 +30,11 @@ evaluation exists, add:
 --old-evaluation outputs/ball_detection_review/old_model_evaluation/ball_detection_review_evaluation_details.csv
 ```
 
-The handoff runner validates the export, runs the model on the 750 hard frames,
-evaluates the result, optionally compares old vs new model performance, and can
-rerun full clips through the stability-gated possession overlay workflow.
+With labels, the handoff runner validates the export, runs the model on the 750
+hard frames, evaluates the result, optionally compares old vs new model
+performance, and can rerun full clips through the stability-gated possession
+overlay workflow. Without labels, it skips hard-frame validation/evaluation and
+uses the model to generate full-clip rerun overlays.
 
 ## Training Batch
 

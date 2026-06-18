@@ -65,57 +65,62 @@ def build_commands(args):
     evaluation_dir = output_root / "new_model_evaluation"
     comparison_dir = output_root / "old_vs_new_model_comparison"
 
-    commands = [
-        (
-            "Validate Roboflow YOLO export",
+    commands = []
+
+    if args.labels_dir:
+        commands.extend(
             [
-                sys.executable,
-                "src/80_validate_roboflow_ball_export.py",
-                "--manifest",
-                args.manifest,
-                "--labels-dir",
-                args.labels_dir,
-                "--images-dir",
-                args.image_dir,
-                "--output-dir",
-                str(validation_dir),
-            ],
-        ),
-        (
-            "Run new model on hard-frame images",
-            [
-                sys.executable,
-                "src/75_detect_ball_review_images.py",
-                "--model",
-                args.model,
-                "--image-dir",
-                args.image_dir,
-                "--output-csv",
-                str(predictions_csv),
-                "--conf",
-                str(args.conf),
-            ],
-        ),
-        (
-            "Evaluate new model on hard-frame annotations",
-            [
-                sys.executable,
-                "src/74_evaluate_ball_detection_review.py",
-                "--manifest",
-                args.manifest,
-                "--labels-dir",
-                args.labels_dir,
-                "--predictions-csv",
-                str(predictions_csv),
-                "--output-dir",
-                str(evaluation_dir),
-                "--iou-threshold",
-                str(args.iou_threshold),
-                "--confidence-threshold",
-                str(args.conf),
-            ],
-        ),
-    ]
+                (
+                    "Validate Roboflow YOLO export",
+                    [
+                        sys.executable,
+                        "src/80_validate_roboflow_ball_export.py",
+                        "--manifest",
+                        args.manifest,
+                        "--labels-dir",
+                        args.labels_dir,
+                        "--images-dir",
+                        args.image_dir,
+                        "--output-dir",
+                        str(validation_dir),
+                    ],
+                ),
+                (
+                    "Run new model on hard-frame images",
+                    [
+                        sys.executable,
+                        "src/75_detect_ball_review_images.py",
+                        "--model",
+                        args.model,
+                        "--image-dir",
+                        args.image_dir,
+                        "--output-csv",
+                        str(predictions_csv),
+                        "--conf",
+                        str(args.conf),
+                    ],
+                ),
+                (
+                    "Evaluate new model on hard-frame annotations",
+                    [
+                        sys.executable,
+                        "src/74_evaluate_ball_detection_review.py",
+                        "--manifest",
+                        args.manifest,
+                        "--labels-dir",
+                        args.labels_dir,
+                        "--predictions-csv",
+                        str(predictions_csv),
+                        "--output-dir",
+                        str(evaluation_dir),
+                        "--iou-threshold",
+                        str(args.iou_threshold),
+                        "--confidence-threshold",
+                        str(args.conf),
+                    ],
+                ),
+            ]
+        )
 
     if args.old_evaluation:
         commands.append(
@@ -172,12 +177,18 @@ def build_commands(args):
 
     outputs = {
         "output_root": output_root,
-        "validation_report": validation_dir / "roboflow_ball_export_validation_report.md",
-        "predictions_csv": predictions_csv,
-        "evaluation_report": evaluation_dir / "ball_detection_review_evaluation_report.md",
-        "evaluation_details": evaluation_dir / "ball_detection_review_evaluation_details.csv",
+        "validation_report": validation_dir / "roboflow_ball_export_validation_report.md"
+        if args.labels_dir
+        else None,
+        "predictions_csv": predictions_csv if args.labels_dir else None,
+        "evaluation_report": evaluation_dir / "ball_detection_review_evaluation_report.md"
+        if args.labels_dir
+        else None,
+        "evaluation_details": evaluation_dir / "ball_detection_review_evaluation_details.csv"
+        if args.labels_dir
+        else None,
         "comparison_report": comparison_dir / "ball_model_evaluation_comparison_report.md"
-        if args.old_evaluation
+        if args.old_evaluation and args.labels_dir
         else None,
     }
     return commands, outputs
@@ -189,7 +200,7 @@ def write_summary(args, outputs):
         "# Post-Roboflow Handoff Summary",
         "",
         f"- Model: `{args.model}`",
-        f"- Labels dir: `{args.labels_dir}`",
+        f"- Labels dir: `{args.labels_dir or 'not provided'}`",
         f"- Manifest: `{args.manifest}`",
         f"- Image dir: `{args.image_dir}`",
         f"- Confidence threshold: `{args.conf}`",
@@ -209,13 +220,14 @@ def write_summary(args, outputs):
 def main():
     parser = argparse.ArgumentParser(
         description=(
-            "Run the post-Roboflow handoff: validate labels, run the new model "
-            "on hard frames, evaluate, optionally compare to an old evaluation, "
-            "and optionally rerun full clips."
+            "Run the post-Roboflow handoff. With labels, validate the export, "
+            "run the new model on hard frames, evaluate, and optionally compare "
+            "to an old evaluation. Without labels, skip hard-frame evaluation "
+            "and rerun requested full clips only."
         )
     )
     parser.add_argument("--model", required=True)
-    parser.add_argument("--labels-dir", required=True)
+    parser.add_argument("--labels-dir", default=None)
     parser.add_argument("--manifest", default=DEFAULT_MANIFEST)
     parser.add_argument("--image-dir", default=DEFAULT_IMAGE_DIR)
     parser.add_argument(
@@ -236,9 +248,15 @@ def main():
     args = parser.parse_args()
 
     validate_path(args.model, "Model", allow_missing=args.dry_run)
-    validate_path(args.labels_dir, "Labels dir", allow_missing=args.dry_run)
-    validate_path(args.manifest, "Manifest")
-    validate_path(args.image_dir, "Image dir")
+    full_clip_list = parse_full_clip_list(args.full_clips)
+    if args.labels_dir:
+        validate_path(args.labels_dir, "Labels dir", allow_missing=args.dry_run)
+        validate_path(args.manifest, "Manifest")
+        validate_path(args.image_dir, "Image dir")
+    elif args.old_evaluation:
+        raise ValueError("--old-evaluation requires --labels-dir")
+    elif not full_clip_list:
+        raise ValueError("Provide --labels-dir or request full clips with --full-clips")
     if args.old_evaluation:
         validate_path(args.old_evaluation, "Old evaluation")
 
@@ -260,7 +278,10 @@ def main():
         print("HANDOFF COMPLETE")
         print("----------------")
         print(f"Summary: {summary_path}")
-        print(f"Evaluation report: {outputs['evaluation_report']}")
+        if outputs["evaluation_report"]:
+            print(f"Evaluation report: {outputs['evaluation_report']}")
+        else:
+            print("Evaluation report: skipped because --labels-dir was not provided")
         if outputs["comparison_report"]:
             print(f"Comparison report: {outputs['comparison_report']}")
 
