@@ -249,14 +249,23 @@ def main():
 
     validate_path(args.model, "Model", allow_missing=args.dry_run)
     full_clip_list = parse_full_clip_list(args.full_clips)
+    unknown_full_clips = [
+        venue for venue in full_clip_list if venue not in FULL_CLIP_PRESETS
+    ]
+    if unknown_full_clips:
+        parser.error(
+            "unknown full-clip preset(s): "
+            f"{', '.join(unknown_full_clips)}. "
+            f"Available: {', '.join(FULL_CLIP_PRESETS)}"
+        )
     if args.labels_dir:
         validate_path(args.labels_dir, "Labels dir", allow_missing=args.dry_run)
         validate_path(args.manifest, "Manifest")
         validate_path(args.image_dir, "Image dir")
     elif args.old_evaluation:
-        raise ValueError("--old-evaluation requires --labels-dir")
+        parser.error("--old-evaluation requires --labels-dir")
     elif not full_clip_list:
-        raise ValueError("Provide --labels-dir or request full clips with --full-clips")
+        parser.error("provide --labels-dir or request full clips with --full-clips")
     if args.old_evaluation:
         validate_path(args.old_evaluation, "Old evaluation")
 
