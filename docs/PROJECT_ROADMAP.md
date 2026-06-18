@@ -45,7 +45,7 @@ exist to help choose the next task.
 
 ### 1. Ball Detection Retraining And Evaluation
 
-Status: in progress.
+Status: annotation complete; new model training/export pending.
 
 A 750-frame multi-venue hard-case batch was generated for Roboflow:
 
@@ -59,9 +59,10 @@ ball jumps.
 
 Manual work:
 
-- Annotate visible balls in Roboflow using the single class `ball`.
-- Mark frames with no visible ball as null/no object.
-- Skip ambiguous frames rather than guessing.
+- Wait for the Colab YOLOv8 training run to finish and provide the exported
+  `best_june_17.pt` path.
+- Export YOLO labels if available; labels are useful for validation/evaluation
+  but not required for the first model-only full-clip overlay rerun.
 
 Automated work:
 
@@ -92,15 +93,19 @@ Automated work:
 
 ### 3. Non-Active Participant Filtering
 
-Status: partially reviewed.
+Status: LeMoyne 65-image review complete; combined filter needs visual review.
 
 LeMoyne is close to usable possession flow, but remaining errors often involve
-substitutes, staff, or assistant referees. This should be addressed before team
-classification or event derivation is pushed further.
+substitutes, staff, or assistant referees. The conservative combined filter now
+excludes tracks `145` and `114` as referees and track `126` as
+substitute/staff. It needs visual review before it is treated as promoted
+behavior.
 
 Manual work:
 
-- Review targeted non-active examples.
+- Compare the combined-filter first-minute overlay against the earlier
+  track-filtered overlay and verify whether removing track `114` reduces
+  sideline/referee ownership errors without hiding real possessions.
 
 Automated work:
 
@@ -110,7 +115,7 @@ Automated work:
 
 Do not push event derivation forward until the first two items improve:
 
-1. Finish Roboflow annotation and train/export the next ball model.
+1. Finish Roboflow training/export for the next ball model.
 2. Run the hard-batch ball evaluation.
 3. Rerun ball paths on key clips.
 4. Rebuild association and min-15 possession chains.

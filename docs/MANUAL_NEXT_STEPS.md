@@ -5,21 +5,20 @@ pipeline around it.
 
 ## Current Queue
 
-1. Complete the LeMoyne tracked non-active participant review.
-   - Open:
-     `outputs/active_participant_review/lemoyne_tracked_min15_non_active_review/player_eligibility_review_order.html`
-   - Fill:
-     `outputs/active_participant_review/lemoyne_tracked_min15_non_active_review/player_eligibility_review_order.csv`
-   - Label the `#1 nearest box` in each image as one of:
-     `active_player`, `referee`, `substitute_or_staff`, `off_field_player`, or
-     `unclear`.
-2. Continue annotating the 750-frame ball-detection batch in Roboflow.
-   - Upload/annotate:
-     `outputs/ball_detection_review/multi_venue_750/clean_frames/`
-   - Reference images only:
-     `outputs/ball_detection_review/multi_venue_750/annotated_frames/`
-   - Use the single label `ball`.
-   - If the ball is not visible, leave the image as a null/no-object frame.
+1. While the Roboflow ball model trains, review the LeMoyne combined
+   non-active participant filter overlay:
+   - Review:
+     `outputs/active_participant_review/lemoyne_tracked_min15_non_active_review/ranked_note_extraction/lemoyne_combined_filtered_min15_overlay_first60s.mp4`
+   - Compare to:
+     `outputs/active_participant_review/lemoyne_tracked_min15_non_active_review/lemoyne_track_filtered_min15_overlay_first60s.mp4`
+   - Focus question: did removing referee track `114`, plus tracks `145` and
+     `126`, reduce sideline/referee control mistakes without making real
+     possession too conservative?
+2. When Roboflow training finishes, provide the YOLOv8 `best_june_17.pt` path.
+   - If exported YOLO labels are not ready, run model-only overlay mode first:
+     `.venv/bin/python src/82_run_post_roboflow_handoff.py --model path/to/best_june_17.pt --full-clips lemoyne,army`
+   - If labels are available, run full validation/evaluation mode:
+     `.venv/bin/python src/82_run_post_roboflow_handoff.py --model path/to/best_june_17.pt --labels-dir path/to/labels --full-clips lemoyne,army`
 
 ## Optional Review
 
@@ -35,19 +34,21 @@ pipeline around it.
 
 ## Waiting On Completion
 
-- After the 65-image non-active review is complete, summarize reviewed player
-  IDs with `src/76_summarize_player_eligibility_reviews.py`, then apply
-  reviewed non-active tracks with `src/78_apply_track_eligibility_reviews.py`.
-- After the Roboflow batch is complete, train/export the next ball model and run
-  the hard-frame evaluation workflow in `docs/BALL_MODEL_EVALUATION.md`.
-  The easiest path is the post-Roboflow handoff runner:
-  `src/82_run_post_roboflow_handoff.py`.
+- The 65-image LeMoyne non-active review is complete. The conservative combined
+  filter currently excludes tracks `145` (referee), `114` (referee), and `126`
+  (substitute/staff). Do not auto-remove mixed/sparse tracks such as `103`,
+  `130`, `117`, `177`, or `23` without more review.
+- The Roboflow annotation batch is complete and training is in progress. After
+  `best_june_17.pt` is available, run `src/82_run_post_roboflow_handoff.py`.
 
 ## Codex-Side Queue
 
-1. Review the stability-gated possession overlays and decide whether the gate
-   improves Army/LeMoyne behavior.
-2. Clean up the full-video ball-model rerun path for the next Roboflow model.
+1. Preserve or port the local ranked-note extraction and merged eligibility
+   summary scripts if they are needed in this checkout:
+   `src/84_extract_ranked_eligibility_notes.py` and
+   `src/85_merge_eligibility_track_summaries.py`.
+2. Run the post-Roboflow handoff once `best_june_17.pt` is available, starting with
+   model-only overlay mode if labels are not ready.
 
 ## Notes
 

@@ -62,3 +62,8 @@ Smoke tests on the current conservative Army and LeMoyne ball paths showed:
 This argues for treating max gap length as the first interpolation parameter to
 tune. The speed gate is still useful, but these clips need more aggressive
 tests before it becomes the limiting factor.
+
+Reports from the first smoke tests:
+
+- `outputs/ball_interpolation_sweep/army_smoke/interpolation_sweep_report.md`
+- `outputs/ball_interpolation_sweep/lemoyne_smoke/interpolation_sweep_report.md`

@@ -23,6 +23,26 @@ The full-clip rerun workflow for a new ball model is documented in
 The ball interpolation sweep workflow is documented in
 `docs/BALL_INTERPOLATION_SWEEPS.md`.
 The current human-review queue is tracked in `docs/MANUAL_NEXT_STEPS.md`.
+The latest off-repository ChatGPT/Codex handoff is captured in
+`docs/HANDOFF_2026_06_18.md`.
+
+## Latest Handoff Status
+
+As of the 2026-06-18 handoff:
+
+- The Roboflow ball annotation batch is complete and a new YOLOv8 model is
+  training in Colab. The latest reported artifact name is `best_june_17.pt`;
+  exported YOLO labels are optional for the first model-only overlay rerun.
+- The LeMoyne 65-image non-active participant review is complete. A conservative
+  combined filter excludes tracks `145` and `114` as referees and track `126` as
+  substitute/staff.
+- Mixed or sparse tracks such as `103`, `130`, `117`, `177`, and `23` should not
+  be auto-removed without further review.
+- The next visual review is the LeMoyne combined-filter overlay compared with
+  the previous track-filtered overlay.
+- Local scripts `src/84_extract_ranked_eligibility_notes.py` and
+  `src/85_merge_eligibility_track_summaries.py` were reported in the handoff,
+  but may need to be ported into this checkout if that workflow is needed here.
 
 ## Current Pipeline
 
