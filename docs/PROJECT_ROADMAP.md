@@ -60,7 +60,7 @@ ball jumps.
 Manual work:
 
 - Wait for the Colab YOLOv8 training run to finish and provide the exported
-  `best.pt` path.
+  `best_june_17.pt` path.
 - Export YOLO labels if available; labels are useful for validation/evaluation
   but not required for the first model-only full-clip overlay rerun.
 

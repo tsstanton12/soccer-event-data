@@ -23,6 +23,9 @@ If the labels export is not ready yet, run model-only overlay mode first:
   --full-clips lemoyne,army
 ```
 
+For the latest reported Colab artifact, replace the model path with
+`path/to/best_june_17.pt`.
+
 Add `--dry-run` first to preview the planned commands. If an old hard-frame
 evaluation exists, add:
 

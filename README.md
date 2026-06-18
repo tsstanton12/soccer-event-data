@@ -21,6 +21,8 @@ ball-player association, and early possession/event labeling.
 - `docs/BALL_INTERPOLATION_SWEEPS.md`: interpolation sweep workflow and notes
 - `docs/MANUAL_NEXT_STEPS.md`: current human-review queue
 - `docs/HANDOFF_2026_06_18.md`: latest off-repository ChatGPT/Codex handoff
+- `docs/LOCAL_ASSET_SYNC.md`: guidance for syncing local videos, outputs, and
+  model weights without committing them
 
 Large local assets such as videos, model weights, training images, generated
 outputs, and experiment runs are intentionally excluded from Git.

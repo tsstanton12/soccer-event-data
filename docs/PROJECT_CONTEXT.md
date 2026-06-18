@@ -31,8 +31,8 @@ The latest off-repository ChatGPT/Codex handoff is captured in
 As of the 2026-06-18 handoff:
 
 - The Roboflow ball annotation batch is complete and a new YOLOv8 model is
-  training in Colab. The next required artifact is `best.pt`; exported YOLO
-  labels are optional for the first model-only overlay rerun.
+  training in Colab. The latest reported artifact name is `best_june_17.pt`;
+  exported YOLO labels are optional for the first model-only overlay rerun.
 - The LeMoyne 65-image non-active participant review is complete. A conservative
   combined filter excludes tracks `145` and `114` as referees and track `126` as
   substitute/staff.

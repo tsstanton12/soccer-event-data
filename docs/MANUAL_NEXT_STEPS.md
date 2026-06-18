@@ -14,11 +14,11 @@ pipeline around it.
    - Focus question: did removing referee track `114`, plus tracks `145` and
      `126`, reduce sideline/referee control mistakes without making real
      possession too conservative?
-2. When Roboflow training finishes, provide the YOLOv8 `best.pt` path.
+2. When Roboflow training finishes, provide the YOLOv8 `best_june_17.pt` path.
    - If exported YOLO labels are not ready, run model-only overlay mode first:
-     `.venv/bin/python src/82_run_post_roboflow_handoff.py --model path/to/best.pt --full-clips lemoyne,army`
+     `.venv/bin/python src/82_run_post_roboflow_handoff.py --model path/to/best_june_17.pt --full-clips lemoyne,army`
    - If labels are available, run full validation/evaluation mode:
-     `.venv/bin/python src/82_run_post_roboflow_handoff.py --model path/to/best.pt --labels-dir path/to/labels --full-clips lemoyne,army`
+     `.venv/bin/python src/82_run_post_roboflow_handoff.py --model path/to/best_june_17.pt --labels-dir path/to/labels --full-clips lemoyne,army`
 
 ## Optional Review
 
@@ -39,7 +39,7 @@ pipeline around it.
   (substitute/staff). Do not auto-remove mixed/sparse tracks such as `103`,
   `130`, `117`, `177`, or `23` without more review.
 - The Roboflow annotation batch is complete and training is in progress. After
-  `best.pt` is available, run `src/82_run_post_roboflow_handoff.py`.
+  `best_june_17.pt` is available, run `src/82_run_post_roboflow_handoff.py`.
 
 ## Codex-Side Queue
 
@@ -47,7 +47,7 @@ pipeline around it.
    summary scripts if they are needed in this checkout:
    `src/84_extract_ranked_eligibility_notes.py` and
    `src/85_merge_eligibility_track_summaries.py`.
-2. Run the post-Roboflow handoff once `best.pt` is available, starting with
+2. Run the post-Roboflow handoff once `best_june_17.pt` is available, starting with
    model-only overlay mode if labels are not ready.
 
 ## Notes
